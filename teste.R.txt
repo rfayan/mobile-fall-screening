@@ -1,0 +1,5 @@
+# arquivo teste do repositorio
+
+funcao <- function(a) {
+	return a*2
+}
