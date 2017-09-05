@@ -22,3 +22,5 @@
 >>> 
 >>> matsquare=np.square(mat[:,1])+np.square(mat[:,2])+np.square(mat[:,3])
 >>> matfusao=np.sqrt(matsquare)
+
+
