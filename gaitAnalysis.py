@@ -63,3 +63,6 @@ def createMatrixFromCsv(directory = 'C:\\Users\\patricia\\Desktop\\Dados Aceler√
 
 generatePdfFromCsv()
 matrizDados = createMatrixFromCsv()
+
+
+
