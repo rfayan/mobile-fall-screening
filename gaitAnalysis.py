@@ -51,10 +51,10 @@ def createMatrixFromCsv(directory = 'C:\\Users\\patricia\\Desktop\\Dados Aceler√
                                 jId=[j,'x'] # cria id com eixo x
                                 jId.append(mat[:,1]) # adiciona dados
                                 dataAcc.append(jId)
-                                jId=[j,'y'] # cria id com eixo x
+                                jId=[j,'y'] # cria id com eixo y
                                 jId.append(mat[:,2]) # adiciona dados
                                 dataAcc.append(jId)
-                                jId=[j,'z'] # cria id com eixo x
+                                jId=[j,'z'] # cria id com eixo z
                                 jId.append(mat[:,3]) # adiciona dados
                                 dataAcc.append(jId)
         return dataAcc                          
