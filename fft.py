@@ -20,8 +20,8 @@ dataAcc.append(mat[:,2])
 dataAcc.append(mat[:,3])
 
 dataFftX = np.fft.fft(dataAcc[0]) # eixo X
-dataFftY = np.fft.fft(dataAcc[1]) # eixo X
-dataFftZ = np.fft.fft(dataAcc[2]) # eixo X
+dataFftY = np.fft.fft(dataAcc[1]) # eixo Y
+dataFftZ = np.fft.fft(dataAcc[2]) # eixo Z
 
 
 def fft(directory = 'C:\\Users\\patricia\\Desktop\\Dados Acelerômetro\\'):
@@ -42,12 +42,12 @@ def fft(directory = 'C:\\Users\\patricia\\Desktop\\Dados Acelerômetro\\'):
                                 dataAcc.append(mat[:,3])
 
                                 # opcao 1 - fft da fusao dos eixos
-                                dataFttS = np.fft.fft( np.sqrt(mat[:1]**2 + mat[:,2]**2 + mat[:,3]**2) )
+                                dataFttS = np.fft.fft( np.sqrt(mat[:,1]**2 + mat[:,2]**2 + mat[:,3]**2) )
                                 
                                 # opcao 2 - fft de cada eixo separadamente
-                                dataFttY = np.fft.fft(mat[:1])
-                                dataFttY = np.fft.fft(mat[:2])
-                                dataFttZ = np.fft.fft(mat[:3])
+                                dataFttY = np.fft.fft(mat[:,1])
+                                dataFttY = np.fft.fft(mat[:,2])
+                                dataFttZ = np.fft.fft(mat[:,3])
 
                                 # ???
                                 dataFftArray.append(dataFftS)
