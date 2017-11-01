@@ -41,8 +41,11 @@ def fft(directory = 'C:\\Users\\patricia\\Desktop\\Dados Acelerômetro\\'):
                                 dataAcc.append(mat[:,2])
                                 dataAcc.append(mat[:,3])
 
+                                matSquare = np.square(mat[:,1])+np.square(mat[:,2])+np.square(mat[:,3])
+                                matFusao = np.square(matSquare)
+
                                 # opcao 1 - fft da fusao dos eixos
-                                dataFttS = np.fft.fft( np.sqrt(mat[:,1]**2 + mat[:,2]**2 + mat[:,3]**2) )
+                                dataFttS = np.fft.fft(matFusao)
                                 
                                 # opcao 2 - fft de cada eixo separadamente
                                 dataFttY = np.fft.fft(mat[:,1])
@@ -65,3 +68,4 @@ plt.show()
 
 # todos os dados
 dataFFTteste = fft()
+
