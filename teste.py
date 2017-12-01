@@ -10,7 +10,15 @@ from matplotlib.backends.backend_pdf import PdfPages
 #def espPot (directory = '/home/maponti/Repos/mobile-fall-screening/data/'):
 #directory = '/home/maponti/Repos/mobile-fall-screening/data/'
 
-data = genfromtxt ('C:\\Users\\Patrícia Bet\\Desktop\\Dados Acelerômetro\\010_Accelerometer_20170724-141126735.csv', delimiter=',')
+#data = genfromtxt ('C:\\Users\\Patrícia Bet\\Desktop\\Dados Acelerômetro\\010_Accelerometer_20170724-141126735.csv', delimiter=',')
+
+
+featMatrix = []
+
+
+## executo para todos os voluntarios
+
+data = genfromtxt ('/home/maponti/Repos/mobile-fall-screening/data/010_Accelerometer_20170724-141126735.csv', delimiter=',')
 j = 1
 
 lst = [elem for elem in data]
@@ -22,11 +30,19 @@ mat = np.reshape(mat,(N,4))
 matSquare = np.square(mat[:,1])+np.square(mat[:,2])+np.square(mat[:,3])
 matFusao = np.sqrt(matSquare)
 
+
 ## converte array de arrays em um unico array
 matFusao = np.squeeze(np.asarray(matFusao[1:]))
 
+## opcional - normalizacao
+matNorma = ( matFusao - np.mean(matFusao) ) / np.std(matFusao)
+
 dataFftS= np.fft.fft(matFusao)
 espPot = np.abs(dataFftS)**2
+
+## FFT da normalizacao
+dataFftN= np.fft.fft(matNorma)
+espPotN = np.abs(dataFftN)**2
 
 # numero de frequencias a ser exibida
 n = espPot.size
@@ -63,19 +79,43 @@ plt.show()
 plt.clf()
 j=j+1
 
+
+espPotNyq = espPot[1:maxfr]
+espPotNNyq = espPotN[1:maxfr]
+
 #Power Spectral Entropy (represents a measure of energy compaction in transform coding)
-pse = sum(espPot*np.log(espPot)) 
+pse = sum(espPotNyq*np.log(espPotNyq)) 
 
 #Power Spectrum Peak(computed by finding the three highest values of signal)
-psp = np.max(freq)
+psp = np.max(espPotNyq)
 
 #Power Spectrum Peak Frequency (computed by finding the frequency related to the higher value of signal)
-pspf = np.argmax(espPot)
+pspf = np.argmax(espPotNyq)
 
 #Weighted Power Spectrum Peak (computed using the PSP values weighed by the PSPF values)
-wpsp = np.argmax(espPot)**np.max(freq)
-
- 
+wpsp = np.argmax(espPotNyq)*np.max(espPotNyq)
 
 
+print("Features w/o normalization / normalized:")
+print("PSE = " + str(pse))
+print("PSP = " + str(psp))
+print("PSPF = " + str(pspf))
+print("WPSP = " + str(wpsp))
+
+features = [pse, psp, pspf, wpsp]
+
+id_vol = 1
+months = -1
+
+featMatrix.append([id_vol] + features + [months])
+
+#### fim da leitura dos dados
+
+
+# featMatrix vai ser uma lista ainda
+
+featMatrix = np.array(featMatrix)
+
+# mostrar todas as features psp (coluna 2, indice 1)    
+print(featMatrix[:, 1])
             
