@@ -43,6 +43,7 @@ def generatePdfFromCsv(directory = 'C:\\Users\\Patrícia Bet\\Desktop\\Dados Ace
 def createMatrixFromCsv(directory = 'C:\\Users\\Patrícia Bet\\Desktop\\Dados Acelerômetro\\'):
 
     """Function to create matrix from csv data"""
+    
     j = 1 
     dataAcc = [] # matriz vazia
         
@@ -134,7 +135,7 @@ def espPot (directory = 'C:\\Users\\Patrícia Bet\\Desktop\\Dados Acelerômetro\
 
 def featuresAcc (directory = 'C:\\Users\\Patrícia Bet\\Desktop\\Dados Acelerômetro\\'):
 
-    """Function to """
+    """Function to ... """
 
     featMatrix = []
 
