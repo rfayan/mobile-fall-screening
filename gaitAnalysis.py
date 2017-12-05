@@ -191,13 +191,15 @@ def featuresAcc (directory = 'C:\\Users\\Patrícia Bet\\Desktop\\Dados Acelerôm
                 print("WPSP = " + str(wpsp))
 
                 features = [pse, psp, pspf, wpsp]
-                id_vol = 1
+                id_vol = "vol_%03d"%j
                 months = -1
 
                 featMatrix = [id_vol, features, months]
+                
+                
                 #featMatrix.append([id_vol] + features + [months])
                 
-                featMatrix = np.array(featMatrix)
+                #featMatrix = np.array(featMatrix)
                 
  
     
