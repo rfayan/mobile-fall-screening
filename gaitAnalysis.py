@@ -2,7 +2,7 @@ import csv
 import numpy as np
 import matplotlib.pyplot as plt
 import os
-import re
+import regex as ne
 
 import scipy
 import scipy.fftpack
@@ -15,7 +15,7 @@ from matplotlib.backends.backend_pdf import PdfPages
 
 
 # Moacir
-directory = '/home/maponti/Repos/mobile-fall-screening/data/'
+#directory = '/home/maponti/Repos/mobile-fall-screening/data/'
 
 #Patricia
 #directory = 'C:\\Users\\Patrícia Bet\\Desktop\\Dados Acelerômetro\\
@@ -92,7 +92,8 @@ def espPot (directory = 'C:\\Users\\Patrícia Bet\\Desktop\\Dados Acelerômetro\
                 # pega o ultimo elemento apos particionar com \ ou /
                 # desse pega os tres primeiros valores
                 # e depois converte para inteiro
-                j = int(re.split('\\ |/', f)[-1][0:3]) 
+                # j = int(re.split('\\ |/', f)[-1][0:3])
+                j = int(re.split('\\\\', f)[-1][0:3]) 
 
                 data = genfromtxt(f,delimiter=',')
                 lst = [elem for elem in data]
@@ -172,7 +173,8 @@ def featuresAcc (directory = 'C:\\Users\\Patrícia Bet\\Desktop\\Dados Acelerôm
                 # pega o ultimo elemento apos particionar com \ ou /
                 # desse pega os tres primeiros valores
                 # e depois converte para inteiro
-                j = int(re.split('\\ |/', f)[-1][0:3]) 
+                #j = int(re.split('\\ |/', f)[-1][0:3])
+                j = int(re.split('\\\\', f)[-1][0:3]) 
 
 
                 data = genfromtxt(f,delimiter=',')
@@ -187,14 +189,15 @@ def featuresAcc (directory = 'C:\\Users\\Patrícia Bet\\Desktop\\Dados Acelerôm
 
                 # convert array of arrays to single array
                 matFusao = np.squeeze(np.asarray(matFusao[1:]))
+                dataFftS = np.fft.fft(matFusao[5:])
+                espPot = np.abs(dataFftS)**2
 
                 # filtering
                 if filtering == True:
-                    fs = 75
-                    matFusao = butter_lowpass_filter(matFusao, 3.667 , fs, order=6)
-
-                dataFftS = np.fft.fft(matFusao[5:])
-                espPot = np.abs(dataFftS)**2
+                    fs = 50
+                    matFusaoF = butter_lowpass_filter(matFusao, 3.667 , fs, order=6)
+                    dataFftF = np.fft.fft(matFusaoF)
+                    espPotF = np.abs(dataFftF)**2
 
                 # number of frequencies to be displayed
                 n = espPot.size
@@ -225,7 +228,7 @@ def featuresAcc (directory = 'C:\\Users\\Patrícia Bet\\Desktop\\Dados Acelerôm
                 print("WPSP = " + str(wpsp))
 
                 features = [pse, psp, pspf, wpsp]
-                id_vol = "vol_%03d"%j
+                id_vol = "%03d"%j
                 months = -1
 
                 #featMatrix = [id_vol, features, months]
