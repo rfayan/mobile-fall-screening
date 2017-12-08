@@ -8,13 +8,18 @@ import scipy.fftpack
 import pylab
 
 from scipy import pi
+from scipy import stats
 from scipy.signal import butter, lfilter, freqz
 from numpy import genfromtxt
 from matplotlib.backends.backend_pdf import PdfPages
 
 
 # Moacir
-#directory = '/home/maponti/Repos/mobile-fall-screening/data/'
+directory = '/home/maponti/Repos/mobile-fall-screening/data/'
+
+# listas
+index_faller = []
+index_excluded = []
 
 #Patricia
 #directory = 'C:\\Users\\Patrícia Bet\\Desktop\\Dados Acelerômetro\\
@@ -91,8 +96,8 @@ def espPot (directory = 'C:\\Users\\Patrícia Bet\\Desktop\\Dados Acelerômetro\
                 # pega o ultimo elemento apos particionar com \ ou /
                 # desse pega os tres primeiros valores
                 # e depois converte para inteiro
-                # j = int(re.split('\\ |/', f)[-1][0:3])
-                j = int(re.split('\\\\', f)[-1][0:3]) 
+                j = int(re.split('\\ |/', f)[-1][0:3]) # Linux
+                #j = int(re.split('\\\\', f)[-1][0:3]) # Windows
 
                 data = genfromtxt(f,delimiter=',')
                 lst = [elem for elem in data]
@@ -162,7 +167,7 @@ def featuresAcc (directory = 'C:\\Users\\Patrícia Bet\\Desktop\\Dados Acelerôm
     featMatrix = []
 
     for root, dirs, files in os.walk(directory):
-        for f in files:
+        for f in sorted(files):
             if f.endswith(".csv"):
 
                 # file name
@@ -172,9 +177,8 @@ def featuresAcc (directory = 'C:\\Users\\Patrícia Bet\\Desktop\\Dados Acelerôm
                 # pega o ultimo elemento apos particionar com \ ou /
                 # desse pega os tres primeiros valores
                 # e depois converte para inteiro
-                #j = int(re.split('\\ |/', f)[-1][0:3])
-                j = int(re.split('\\\\', f)[-1][0:3]) 
-
+                j = int(re.split('\\ |/', f)[-1][0:3])  # Linux
+                #j = int(re.split('\\\\', f)[-1][0:3]) # Windows
 
                 data = genfromtxt(f,delimiter=',')
                 lst = [elem for elem in data]
@@ -193,7 +197,7 @@ def featuresAcc (directory = 'C:\\Users\\Patrícia Bet\\Desktop\\Dados Acelerôm
 
                 # filtering
                 if filtering == True:
-                    fs = 50
+                    fs = 25
                     matFusaoF = butter_lowpass_filter(matFusao, 3.667 , fs, order=6)
                     dataFftF = np.fft.fft(matFusaoF)
                     espPotF = np.abs(dataFftF)**2
@@ -214,26 +218,39 @@ def featuresAcc (directory = 'C:\\Users\\Patrícia Bet\\Desktop\\Dados Acelerôm
                 psp = np.max(espPotNyq)
 
                 #Power Spectrum Peak Frequency (computed by finding the frequency related to the higher value of signal)
-                pspf = np.argmax(espPotNyq)
+                pspf1 = np.argmax(espPotNyq)
 
                 #Weighted Power Spectrum Peak (computed using the PSP values weighed by the PSPF values)
                 wpsp = np.argmax(espPotNyq)*np.max(espPotNyq)
 
+                # get second peak
+                espPotNyq[pspf1] = 0
+                espPotNyq[pspf1-1] = 0
+                espPotNyq[pspf1+1] = 0
+                #Power Spectrum Peak Frequency (computed by finding the frequency related to the higher value of signal)
+                pspf2 = np.argmax(espPotNyq)
+
+                # get third peak
+                espPotNyq[pspf2] = 0
+                espPotNyq[pspf2-1] = 0
+                espPotNyq[pspf2+1] = 0
+                #Power Spectrum Peak Frequency (computed by finding the frequency related to the higher value of signal)
+                pspf3 = np.argmax(espPotNyq)
 
                 print("Features:")
                 print("PSE = " + str(pse))
                 print("PSP = " + str(psp))
-                print("PSPF = " + str(pspf))
+                print("PSPF = " + str(pspf1) + " " + str(pspf2) + " " + str(pspf3))
                 print("WPSP = " + str(wpsp))
 
-                features = [pse, psp, pspf, wpsp]
+                features = [pse, psp, pspf1, pspf2, pspf3, wpsp]
                 id_vol = "%03d"%j
                 months = -1
                                 
                 featMatrix.append([id_vol] + features + [months])
 
                 
-    featMatrix = np.array(featMatrix)
+    #featMatrix = np.array(featMatrix)
     
     return featMatrix
 
@@ -251,6 +268,41 @@ def butter_lowpass_filter(data, cutoff, fs, order=5):
     y = lfilter(b, a, data)
     return y
 
+
+
+def setMonths(matrix, posInd, value):
+    "Percorre a matriz, e altera as posicoes de forma que o mes fique 'value'"
+    " posInd contem as posicoes a serem alteradas para 'value' "
+    " ex. setMonths(mat, [1, 5, 6, 67], 1) "
+    " ex. setMonths(mat, lista_indices, 0) "
+     
+    print(posInd)
+
+
+
+
+def tTestFeatures(matriz, featId):
+
+    mPos = []
+    mNeg = []
+
+    # percorre todos as linhas
+    for v in matriz:
+        # monta as matrizes negativa e positiva
+        if v[5] == 1:
+            mPos = mPos + [v[featId]]
+        elif v[5] == -1:
+            mNeg = mNeg + [v[featId]]
+
+    print("Medias, grupo + : " + str(np.mean(mPos)) + " desvio: " + str(np.std(mPos)))
+    print("        grupo - : " + str(np.mean(mNeg)) + " desvio: " + str(np.std(mNeg)))
+
+
+    tTest = stats.ttest_ind(mPos, mNeg) 
+    print("p-value Test-t: "+ str(tTest.pvalue))
+
+    return tTest
+     
 
 
 
