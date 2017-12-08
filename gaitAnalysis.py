@@ -2,14 +2,13 @@ import csv
 import numpy as np
 import matplotlib.pyplot as plt
 import os
-import regex as ne
-
+import regex as re
 import scipy
 import scipy.fftpack
 import pylab
+
 from scipy import pi
 from scipy.signal import butter, lfilter, freqz
-
 from numpy import genfromtxt
 from matplotlib.backends.backend_pdf import PdfPages
 
@@ -230,13 +229,12 @@ def featuresAcc (directory = 'C:\\Users\\Patrícia Bet\\Desktop\\Dados Acelerôm
                 features = [pse, psp, pspf, wpsp]
                 id_vol = "%03d"%j
                 months = -1
-
-                #featMatrix = [id_vol, features, months]
                                 
                 featMatrix.append([id_vol] + features + [months])
 
                 
     featMatrix = np.array(featMatrix)
+    
     return featMatrix
 
 
