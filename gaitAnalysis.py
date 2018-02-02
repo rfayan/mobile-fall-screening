@@ -17,13 +17,15 @@ from matplotlib.backends.backend_pdf import PdfPages
 # Moacir
 directory = '/home/maponti/Repos/mobile-fall-screening/data/'
 
-# listas
-index_faller = []
-index_excluded = []
+# listas de caidores e excluidos
+index_faller = [9, 10, 35, 40, 59, 70, 77]
+index_excluded = [5, 16, 26, 48, 65, 66]
+
+# dicionario com indices e meses
+dict_label = {7:3, 9:1, 10:1, 35:1, 40:1, 59:1, 70:1, 77:1}
 
 #Patricia
 #directory = 'C:\\Users\\Patrícia Bet\\Desktop\\Dados Acelerômetro\\
-
 
 def generatePdfFromCsv(directory = 'C:\\Users\\Patrícia Bet\\Desktop\\Dados Acelerômetro\\'):
 
@@ -215,7 +217,7 @@ def featuresAcc (directory = 'C:\\Users\\Patrícia Bet\\Desktop\\Dados Acelerôm
                 pse = sum(espPotNyq*np.log(espPotNyq)) 
 
                 #Power Spectrum Peak(computed by finding the three highest values of signal)
-                psp = np.max(espPotNyq)
+                psp1 = np.max(espPotNyq)
 
                 #Power Spectrum Peak Frequency (computed by finding the frequency related to the higher value of signal)
                 pspf1 = np.argmax(espPotNyq)
@@ -229,6 +231,7 @@ def featuresAcc (directory = 'C:\\Users\\Patrícia Bet\\Desktop\\Dados Acelerôm
                 espPotNyq[pspf1+1] = 0
                 #Power Spectrum Peak Frequency (computed by finding the frequency related to the higher value of signal)
                 pspf2 = np.argmax(espPotNyq)
+                psp2  = np.max(espPotNyq)
 
                 # get third peak
                 espPotNyq[pspf2] = 0
@@ -236,14 +239,15 @@ def featuresAcc (directory = 'C:\\Users\\Patrícia Bet\\Desktop\\Dados Acelerôm
                 espPotNyq[pspf2+1] = 0
                 #Power Spectrum Peak Frequency (computed by finding the frequency related to the higher value of signal)
                 pspf3 = np.argmax(espPotNyq)
+                psp3  = np.max(espPotNyq)
 
                 print("Features:")
                 print("PSE = " + str(pse))
-                print("PSP = " + str(psp))
+                print("PSP = " + str(psp1) + " " + str(psp2) + " " + str(psp3))
                 print("PSPF = " + str(pspf1) + " " + str(pspf2) + " " + str(pspf3))
                 print("WPSP = " + str(wpsp))
 
-                features = [pse, psp, pspf1, pspf2, pspf3, wpsp]
+                features = [pse, psp1, psp2, psp3, pspf1, pspf2, pspf3, wpsp]
                 id_vol = "%03d"%j
                 months = -1
                                 
@@ -281,17 +285,26 @@ def setMonths(matrix, posInd, value):
 
 
 
-def tTestFeatures(matriz, featId):
+def tTestFeatures(matriz, featId, indPos, indExc):
 
+    labPos = 9
+        
     mPos = []
     mNeg = []
+
+    #rotula na matriz
+    for i in indPos:
+        matriz[i][labPos] = 1   
+
+    for i in indExc:
+        matriz[i][labPos] = 0   
 
     # percorre todos as linhas
     for v in matriz:
         # monta as matrizes negativa e positiva
-        if v[5] == 1:
+        if v[labPos] == 1:
             mPos = mPos + [v[featId]]
-        elif v[5] == -1:
+        elif v[labPos] == -1:
             mNeg = mNeg + [v[featId]]
 
     print("Medias, grupo + : " + str(np.mean(mPos)) + " desvio: " + str(np.std(mPos)))
