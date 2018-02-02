@@ -15,7 +15,7 @@ from matplotlib.backends.backend_pdf import PdfPages
 
 
 # Moacir
-directory = '/home/maponti/Repos/mobile-fall-screening/data/'
+#directory = '/home/maponti/Repos/mobile-fall-screening/data/'
 
 # listas de caidores e excluidos
 index_faller = [9, 10, 35, 40, 59, 70, 77]
