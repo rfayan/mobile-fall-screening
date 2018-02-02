@@ -274,17 +274,6 @@ def butter_lowpass_filter(data, cutoff, fs, order=5):
 
 
 
-def setMonths(matrix, posInd, value):
-    "Percorre a matriz, e altera as posicoes de forma que o mes fique 'value'"
-    " posInd contem as posicoes a serem alteradas para 'value' "
-    " ex. setMonths(mat, [1, 5, 6, 67], 1) "
-    " ex. setMonths(mat, lista_indices, 0) "
-     
-    print(posInd)
-
-
-
-
 def tTestFeatures(matriz, featId, indPos, indExc):
 
     labPos = 9
