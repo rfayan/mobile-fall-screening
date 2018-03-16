@@ -15,18 +15,18 @@ from matplotlib.backends.backend_pdf import PdfPages
 
 
 # Moacir
-directory = '/home/maponti/Repos/mobile-fall-screening/data/'
+#directory = '/home/maponti/Repos/mobile-fall-screening/data/'
 
 # listas de caidores e excluidos
-index_faller = [9, 10, 35, 40, 59, 70, 77]
+index_faller = [7, 9, 10, 15, 27, 34, 35, 40, 45, 58, 59, 63, 70, 77]
 index_excluded = [5, 16, 26, 48, 65, 66]
 
 # dicionario com indices e meses
 # podemos usar meses, e depois se precisar convertemos tudo para '1' (caidor)
-dict_label = {7:3, 9:1, 10:1, 35:1, 40:1, 59:1, 70:1, 77:1}
+dict_label = {7:6, 15:6, 27:6, 34:6, 46:6, 58:6, 59:6, 59: 63:6, 9:3, 10:3, 35:3, 40:3, 59:3, 70:3, 77:3}
 
 # dicionario com o numero de quedas
-dict_qtde  = {7:1, 9:1, 10:1, 35:1, 40:1, 59:1, 70:1, 77:1}
+dict_qtde  = {7:1, 9:1, 10:1, 15:1, 27:1, 34:1, 35:1, 40:1, 45:1, 58:1, 59:2, 63:1, 70:1, 77:1}
 
 #Patricia
 #directory = 'C:\\Users\\Patrícia Bet\\Desktop\\Dados Acelerômetro\\
@@ -102,7 +102,7 @@ def espPot (directory = 'C:\\Users\\Patrícia Bet\\Desktop\\Dados Acelerômetro\
                 # pega o ultimo elemento apos particionar com \ ou /
                 # desse pega os tres primeiros valores
                 # e depois converte para inteiro
-                j = int(re.split('\\ |/', f)[-1][0:3]) # Linux
+                #j = int(re.split('\\ |/', f)[-1][0:3]) # Linux
                 #j = int(re.split('\\\\', f)[-1][0:3]) # Windows
 
                 data = genfromtxt(f,delimiter=',')
