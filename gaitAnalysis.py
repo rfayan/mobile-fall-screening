@@ -182,7 +182,7 @@ def segmentTUGs(directory = 'C:\\Users\\Patrícia Bet\\Desktop\\Dados Acelerôme
                 # pega o ultimo elemento apos particionar com \ ou /
                 # desse pega os tres primeiros valores
                 # e depois converte para inteiro
-                j = int(re.split('\\ |/', f)[-1][0:3]) # Linux
+                #j = int(re.split('\\ |/', f)[-1][0:3]) # Linux
                 #j = int(re.split('\\\\', f)[-1][0:3]) # Windows
 
                 data = genfromtxt(f,delimiter=',')
@@ -215,7 +215,7 @@ def segmentTUGs(directory = 'C:\\Users\\Patrícia Bet\\Desktop\\Dados Acelerôme
                 
                 
                 # filtro
-                tamanho = 50 #trocar aqui
+                tamanho = 100 #trocar aqui
                 
                 for filtro in range(mask.size):
                     acumulador = 0
@@ -285,7 +285,7 @@ def featuresAcc (directory = 'C:\\Users\\Patrícia Bet\\Desktop\\Dados Acelerôm
                 # pega o ultimo elemento apos particionar com \ ou /
                 # desse pega os tres primeiros valores
                 # e depois converte para inteiro
-                j = int(re.split('\\ |/', f)[-1][0:3])  # Linux
+                #j = int(re.split('\\ |/', f)[-1][0:3])  # Linux
                 #j = int(re.split('\\\\', f)[-1][0:3]) # Windows
 
                 data = genfromtxt(f,delimiter=',')
