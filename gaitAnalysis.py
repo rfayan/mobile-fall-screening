@@ -212,8 +212,27 @@ def segmentTUGs(directory = 'C:\\Users\\Patrícia Bet\\Desktop\\Dados Acelerôme
                 # especificar um limiar e pegar apenas valores acima
                 mask = np.zeros(matSegm.shape)
                 mask[np.where(matSegm > 0)] = 1
+                
+                
+                # filtro
+                tamanho = 50 #trocar aqui
+                
+                for filtro in range(mask.size):
+                    acumulador = 0
+                    interior = 0
+                    while(interior <= tamanho):
+                        auxiliar = filtro+interior
+                        if(auxiliar >= mask.size):
+                            auxiliar = mask.size-1
+                        acumulador += mask[auxiliar]            
+                        interior += 1
+                    if(mask[filtro]==0 and acumulador > 0):
+                        mask[filtro]=1
+                    if(mask[filtro]==1 and acumulador == 0):
+                        mask[filtro]=0
 
                 print(mask)
+                
 
                 dataFftS = np.fft.fft(matFusao)
                 espPotS = np.abs(dataFftS)**2
