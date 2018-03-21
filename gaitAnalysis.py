@@ -15,7 +15,7 @@ from matplotlib.backends.backend_pdf import PdfPages
 
 
 # Moacir
-#directory = '/home/maponti/Repos/mobile-fall-screening/data/'
+directory = '/home/maponti/Repos/mobile-fall-screening/data/'
 
 #Patricia
 #directory = 'C:\\Users\\Patrícia Bet\\Desktop\\Dados Acelerômetro\\'
@@ -167,10 +167,39 @@ def espPot (directory = 'C:\\Users\\Patrícia Bet\\Desktop\\Dados Acelerômetro\
                 #plt.clf()
 
 
+def countTUGs(series):
+    ''' Counts the number of connected sequences of 1s inside
+        the mask segmenting TUGs
+        Returns the count and a vector with the TUG sizes
+    '''
+    count = 0
+    curr = 0
 
-def segmentTUGs(directory = 'C:\\Users\\Patrícia Bet\\Desktop\\Dados Acelerômetro\\', filtering=False, sumFilterSize=3):
+    # encontra primeiro '1'
+    one  = np.argmax(series[curr:])
+    curr = curr + one
+
+    TUGsizes = []
+
+    while (one > 0):
+
+        # encontra o proximo '0'
+        zero = np.argmin(series[curr:])
+        print("Zero (TUG): "+str(zero))
+        TUGsizes.append(zero)
+        curr = curr + zero
+        count = count + 1
+
+        # encontra o proximo '1'
+        one  = np.argmax(series[curr:])
+        curr = curr + one
+
+    return count, TUGsizes
+
+def segmentTUGs(directory = 'C:\\Users\\Patrícia Bet\\Desktop\\Dados Acelerômetro\\', filtering=False, sumFilterSize=300):
 
     ''' Function to segment the different TUGs along the signal '''
+    ''' sumFilterSize default 300 = 3 seconds (considering 100Hz sampling)  '''
     for root, dirs, files in os.walk(directory):
         for f in files:
             if f.endswith(".csv"):
@@ -182,7 +211,7 @@ def segmentTUGs(directory = 'C:\\Users\\Patrícia Bet\\Desktop\\Dados Acelerôme
                 # pega o ultimo elemento apos particionar com \ ou /
                 # desse pega os tres primeiros valores
                 # e depois converte para inteiro
-                #j = int(re.split('\\ |/', f)[-1][0:3]) # Linux
+                j = int(re.split('\\ |/', f)[-1][0:3]) # Linux
                 #j = int(re.split('\\\\', f)[-1][0:3]) # Windows
 
                 data = genfromtxt(f,delimiter=',')
@@ -212,8 +241,20 @@ def segmentTUGs(directory = 'C:\\Users\\Patrícia Bet\\Desktop\\Dados Acelerôme
                 # especificar um limiar e pegar apenas valores acima
                 mask = np.zeros(matSegm.shape)
                 mask[np.where(matSegm > 0)] = 1
-                
-                
+ 
+ 
+                # segunda segmentacao
+                matSegm2 = np.convolve(mask, h, mode='same')
+                matSegm2 = (matSegm2-np.mean(matSegm2)) / np.std(matSegm2)
+
+                matSegm2[ : int(sumFilterSize/2)] = 0
+                matSegm2[-int(sumFilterSize/2) : ] = 0
+        
+                # especificar um limiar e pegar apenas valores acima
+                mask2 = np.zeros(matSegm2.shape)
+                mask2[np.where(matSegm2 > 0)] = 1
+
+                                
                 # filtro
                 tamanho = 100 #trocar aqui
                 
@@ -229,7 +270,7 @@ def segmentTUGs(directory = 'C:\\Users\\Patrícia Bet\\Desktop\\Dados Acelerôme
                     if(mask[filtro]==0 and acumulador > 0):
                         mask[filtro]=1
                     if(mask[filtro]==1 and acumulador == 0):
-                        mask[filtro]=0
+                            mask[filtro]=0  
 
                 print(mask)
                 
@@ -251,12 +292,14 @@ def segmentTUGs(directory = 'C:\\Users\\Patrícia Bet\\Desktop\\Dados Acelerôme
                 ax1.plot(matFusao)
                 if filtering:
                     ax1.plot(matFusaoF*mask)
+                    ax1.plot(matFusaoF*mask2)
                 #ax1.set_title('Signal Fusion')
 
                 # segmentation
                 ax2 = fig.add_subplot(212)
                 ax2.plot(matSegm)
                 ax2.plot(mask)
+                ax2.plot(mask2)
 
                 nome = "dados_segmentacao%03d.pdf"%j
                 pp = PdfPages(nome)
@@ -264,6 +307,11 @@ def segmentTUGs(directory = 'C:\\Users\\Patrícia Bet\\Desktop\\Dados Acelerôme
                 pp.close()
                 #plt.show()
                 plt.clf()
+                plt.close('all')
+
+                if j == 5:
+                    return mask, mask2
+
                 
 
 
