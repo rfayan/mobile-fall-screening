@@ -6,23 +6,32 @@ import regex as re
 import scipy
 import scipy.fftpack
 import pylab
+import heapq
 
 from scipy import pi
 from scipy import stats
 from scipy.signal import butter, lfilter, freqz
 from numpy import genfromtxt
 from matplotlib.backends.backend_pdf import PdfPages
+from itertools import product
 
 
 # Moacir
-directory = '/home/maponti/Repos/mobile-fall-screening/data/'
+#directory = '/home/maponti/Repos/mobile-fall-screening/data/'
 
 #Patricia
-#directory = 'C:\\Users\\Patrícia Bet\\Desktop\\Dados Acelerômetro\\'
+directory = 'C:\\Users\\Patrícia Bet\\Desktop\\Dados Acelerômetro\\'
+
+#lista de idades(grupos)
+index_60 = [0, 6, 8, 9, 10, 11, 13, 15, 18, 20, 23, 24, 25, 27, 28, 31, 33, 34, 35, 36, 37, 41, 43, 45, 46, 47, 49, 50, 52, 54, 55, 60, 63, 65, 69, 70, 72, 74, 75, 76]
+index_70 = [1, 3, 4, 7, 14, 17, 21, 22, 32, 38, 39, 40, 42, 53, 56, 57, 58, 61, 62, 64, 71, 77]
+index_80 = [2, 12, 19, 29, 30, 44, 51, 59, 67, 73, 78]
 
 
 # listas de caidores e excluidos
 index_faller = [7, 9, 10, 15, 27, 34, 35, 40, 45, 58, 59, 63, 70, 77]
+index_faller3M = [9, 10, 35, 40, 59, 70, 77]
+index_faller6M = [7, 15, 27, 34, 46, 58, 59, 63]
 index_excluded = [5, 16, 26, 48, 65, 66]
 
 # dicionario com indices e meses
@@ -33,7 +42,7 @@ dict_label = {7:6, 15:6, 27:6, 34:6, 46:6, 58:6, 59:6, 63:6, 9:3, 10:3, 35:3, 40
 dict_qtde  = {7:1, 9:1, 10:1, 15:1, 27:1, 34:1, 35:1, 40:1, 45:1, 58:1, 59:2, 63:1, 70:1, 77:1}
 
 
-def generatePdfFromCsv(directory = 'C:\\Users\\Patrícia Bet\\Desktop\\Dados Acelerômetro\\'):
+def generatePdfFromCsv(directory):
 
     """Function to generate Pdf from csv files"""
 
@@ -59,7 +68,7 @@ def generatePdfFromCsv(directory = 'C:\\Users\\Patrícia Bet\\Desktop\\Dados Ace
                 j=j+1
 
 
-def createMatrixFromCsv(directory = 'C:\\Users\\Patrícia Bet\\Desktop\\Dados Acelerômetro\\'):
+def createMatrixFromCsv(directory):
 
     """Function to create matrix from csv data"""
     
@@ -89,7 +98,7 @@ def createMatrixFromCsv(directory = 'C:\\Users\\Patrícia Bet\\Desktop\\Dados Ac
                                        
 
 
-def espPot (directory = 'C:\\Users\\Patrícia Bet\\Desktop\\Dados Acelerômetro\\', filtering=False):
+def espPot (directory, filtering=False):
 
     """Function to generate pdf of the axes fusion, power spectrum and the logarithm of the power spectrum"""
 
@@ -105,7 +114,7 @@ def espPot (directory = 'C:\\Users\\Patrícia Bet\\Desktop\\Dados Acelerômetro\
                 # desse pega os tres primeiros valores
                 # e depois converte para inteiro
                 #j = int(re.split('\\ |/', f)[-1][0:3]) # Linux
-                #j = int(re.split('\\\\', f)[-1][0:3]) # Windows
+                j = int(re.split('\\\\', f)[-1][0:3]) # Windows
 
                 data = genfromtxt(f,delimiter=',')
                 lst = [elem for elem in data]
@@ -167,36 +176,9 @@ def espPot (directory = 'C:\\Users\\Patrícia Bet\\Desktop\\Dados Acelerômetro\
                 #plt.clf()
 
 
-def countTUGs(series):
-    ''' Counts the number of connected sequences of 1s inside
-        the mask segmenting TUGs
-        Returns the count and a vector with the TUG sizes
-    '''
-    count = 0
-    curr = 0
+    
 
-    # encontra primeiro '1'
-    one  = np.argmax(series[curr:])
-    curr = curr + one
-
-    TUGsizes = []
-
-    while (one > 0):
-
-        # encontra o proximo '0'
-        zero = np.argmin(series[curr:])
-        print("Zero (TUG): "+str(zero))
-        TUGsizes.append(zero)
-        curr = curr + zero
-        count = count + 1
-
-        # encontra o proximo '1'
-        one  = np.argmax(series[curr:])
-        curr = curr + one
-
-    return count, TUGsizes
-
-def segmentTUGs(directory = 'C:\\Users\\Patrícia Bet\\Desktop\\Dados Acelerômetro\\', filtering=False, sumFilterSize=300):
+def segmentTUGs(directory, filtering=False, sumFilterSize=300):
 
     ''' Function to segment the different TUGs along the signal '''
     ''' sumFilterSize default 300 = 3 seconds (considering 100Hz sampling)  '''
@@ -205,16 +187,16 @@ def segmentTUGs(directory = 'C:\\Users\\Patrícia Bet\\Desktop\\Dados Acelerôme
             if f.endswith(".csv"):
 
                 # file name
-                f = directory+f
+                f = directory + f
                 print(f)
 
                 # pega o ultimo elemento apos particionar com \ ou /
                 # desse pega os tres primeiros valores
                 # e depois converte para inteiro
-                j = int(re.split('\\ |/', f)[-1][0:3]) # Linux
-                #j = int(re.split('\\\\', f)[-1][0:3]) # Windows
+                #j = int(re.split('\\ |/', f)[-1][0:3]) # Linux
+                j = int(re.split('\\\\', f)[-1][0:3]) # Windows
 
-                data = genfromtxt(f,delimiter=',')
+                data = genfromtxt(f, delimiter=',')
                 lst = [elem for elem in data]
                 N = len(lst)
                 mat = np.bmat(lst)
@@ -256,21 +238,21 @@ def segmentTUGs(directory = 'C:\\Users\\Patrícia Bet\\Desktop\\Dados Acelerôme
 
                                 
                 # filtro
-                tamanho = 100 #trocar aqui
+                size = 100 #trocar aqui
                 
                 for filtro in range(mask.size):
-                    acumulador = 0
+                    accumulator = 0
                     interior = 0
-                    while(interior <= tamanho):
-                        auxiliar = filtro+interior
-                        if(auxiliar >= mask.size):
-                            auxiliar = mask.size-1
-                        acumulador += mask[auxiliar]            
+                    while(interior <= size):
+                        auxiliary = size+interior
+                        if(auxiliary >= mask.size):
+                            auxiliary = mask.size-1
+                        accumulator += mask[auxiliary]            
                         interior += 1
-                    if(mask[filtro]==0 and acumulador > 0):
-                        mask[filtro]=1
-                    if(mask[filtro]==1 and acumulador == 0):
-                            mask[filtro]=0  
+                    if(mask[size]==0 and accumulator > 0):
+                        mask[size]=1
+                    if(mask[size]==1 and accumulator == 0):
+                        mask[size]=0  
 
                 print(mask)
                 
@@ -300,7 +282,6 @@ def segmentTUGs(directory = 'C:\\Users\\Patrícia Bet\\Desktop\\Dados Acelerôme
                 ax2.plot(matSegm)
                 ax2.plot(mask)
                 ax2.plot(mask2)
-
                 nome = "dados_segmentacao%03d.pdf"%j
                 pp = PdfPages(nome)
                 pp.savefig()
@@ -309,16 +290,120 @@ def segmentTUGs(directory = 'C:\\Users\\Patrícia Bet\\Desktop\\Dados Acelerôme
                 plt.clf()
                 plt.close('all')
 
-                if j == 5:
-                    return mask, mask2
 
-                
-
+                if j == 6:
+                    return mask2
 
 
-def featuresAcc (directory = 'C:\\Users\\Patrícia Bet\\Desktop\\Dados Acelerômetro\\', filtering=False):
 
-    """Function to ... """
+def countTUGs(series):
+    ''' Counts the number of connected sequences of -1s inside
+        the mask segmenting TUGs
+        Returns the count and a vector with the TUG sizes
+    '''
+
+    
+    count = 0
+    curr = 0
+    mask = series
+    
+    # encontra primeiro '1'
+    one  = np.argmax(series[curr:])
+    curr = curr + one
+    j = 1
+
+    TUGsizes = []
+    
+
+    while (one > 0):
+        #encontra o proximo '0'
+        zero = np.argmin(series[curr:])
+        print( "TUG_%03d:"%j + str(zero))
+        TUGsizes.append(zero)
+        curr = curr + zero
+        count = count + 1
+        
+        # encontra o proximo '1'
+        one  = np.argmax(series[curr:])
+        curr = curr + one
+
+        j = j + 1
+
+    return count, TUGsizes, mask
+
+
+def agroup(count):
+
+    countTUG = count[0]
+    TUGsizes = count[1]
+    mask = count[2]
+    j = 1
+
+
+    if countTUG == 9:
+        print("Há 9 TUGs")
+
+
+    elif countTUG == 7:
+
+        largest = heapq.nlargest(2, TUGsizes)
+        
+        first = largest[0]
+        i = TUGsizes.index(first)
+        TUGsizes[i] = TUGsizes[i]/2
+        TUGsizes.insert(i, TUGsizes[i])
+
+        second = largest[1]
+        i = TUGsizes.index(second)
+        TUGsizes[i] = TUGsizes[i]/2
+        TUGsizes.insert(i,TUGsizes[i])
+
+
+    elif countTUG == 8: 
+        
+        maximo = max(TUGsizes)
+        i = TUGsizes.index(maximo)
+        TUGsizes[i] = TUGsizes[i]/2
+        TUGsizes.insert(i, TUGsizes[i])      
+        
+   
+    elif countTUG == 10: 
+        
+        minimo = min(TUGsizes)
+        i = TUGsizes.index(minimo)
+        TUGsizes[i+1]+= minimo
+        del TUGsizes[i]
+ 
+
+    elif countTUG == 11: 
+        
+        smallest = heapq.nsmallest(2, TUGsizes)
+              
+        firstMin = smallest[0]
+        i = TUGsizes.index(firstMin)
+        TUGsizes[i + 1] += firstMin
+        del TUGsizes[i]
+     
+        secondMin = smallest[1]#não funcionou
+        i = TUGsizes.index(secondMin)
+        TUGsizes[i + 1] += secondMin
+        del TUGsizes[i]
+
+
+
+    newCount = len(TUGsizes) 
+    
+    print("TUG_%02d:"%j + str(TUGsizes))
+    j = j + 1 
+    
+    return newCount, TUGsizes, mask
+
+
+
+
+def featuresAcc (directory, filtering=False):
+
+    """Function to generate signal characteristics"""
 
     featMatrix = []
 
@@ -334,7 +419,7 @@ def featuresAcc (directory = 'C:\\Users\\Patrícia Bet\\Desktop\\Dados Acelerôm
                 # desse pega os tres primeiros valores
                 # e depois converte para inteiro
                 #j = int(re.split('\\ |/', f)[-1][0:3])  # Linux
-                #j = int(re.split('\\\\', f)[-1][0:3]) # Windows
+                j = int(re.split('\\\\', f)[-1][0:3]) # Windows
 
                 data = genfromtxt(f,delimiter=',')
                 lst = [elem for elem in data]
@@ -367,31 +452,31 @@ def featuresAcc (directory = 'C:\\Users\\Patrícia Bet\\Desktop\\Dados Acelerôm
 
                 espPotNyq = espPot[1:maxfr]
 
-                #Power Spectral Entropy (represents a measure of energy compaction in transform coding)
+                #power spectral entropy
                 pse = sum(espPotNyq*np.log(espPotNyq)) 
 
-                #Power Spectrum Peak(computed by finding the three highest values of signal)
+                #power spectrum peak
                 psp1 = np.max(espPotNyq)
 
-                #Power Spectrum Peak Frequency (computed by finding the frequency related to the higher value of signal)
+                #power spectrum peak frequency
                 pspf1 = np.argmax(espPotNyq)
 
-                #Weighted Power Spectrum Peak (computed using the PSP values weighed by the PSPF values)
+                #weighted power spectrum peak
                 wpsp = np.argmax(espPotNyq)*np.max(espPotNyq)
 
-                # get second peak
+                # get second peak pspf e psp
                 espPotNyq[pspf1] = 0
                 espPotNyq[pspf1-1] = 0
                 espPotNyq[pspf1+1] = 0
-                #Power Spectrum Peak Frequency (computed by finding the frequency related to the higher value of signal)
+                
                 pspf2 = np.argmax(espPotNyq)
                 psp2  = np.max(espPotNyq)
 
-                # get third peak
+                # get third peak pspf e psp
                 espPotNyq[pspf2] = 0
                 espPotNyq[pspf2-1] = 0
                 espPotNyq[pspf2+1] = 0
-                #Power Spectrum Peak Frequency (computed by finding the frequency related to the higher value of signal)
+
                 pspf3 = np.argmax(espPotNyq)
                 psp3  = np.max(espPotNyq)
 
@@ -428,7 +513,11 @@ def butter_lowpass_filter(data, cutoff, fs, order=5):
 
 
 
-def tTestFeatures(matriz, featId, indPos, indExc):
+def tTestFeatures(matrix, featId, indPos, indExc):
+    
+    """Function for the variables statistical analysis of the two 
+    groups formed from the two months of future fall observation 
+    using test t"""
 
     labPos = 9
         
@@ -437,19 +526,18 @@ def tTestFeatures(matriz, featId, indPos, indExc):
 
     #rotula na matriz
     for i in indPos:
-        matriz[i][labPos] = 1   
+        matrix[i][labPos] = 1   
 
     for i in indExc:
-        matriz[i][labPos] = 0   
+        matrix[i][labPos] = 0   
 
     # percorre todos as linhas
-    for v in matriz:
+    for v in matrix:
         # monta as matrizes negativa e positiva
         if v[labPos] == 1:
             mPos = mPos + [v[featId]]
         elif v[labPos] == -1:
             mNeg = mNeg + [v[featId]]
-
     print("Medias, grupo + : " + str(np.mean(mPos)) + " desvio: " + str(np.std(mPos)))
     print("        grupo - : " + str(np.mean(mNeg)) + " desvio: " + str(np.std(mNeg)))
 
@@ -458,8 +546,50 @@ def tTestFeatures(matriz, featId, indPos, indExc):
     print("p-value Test-t: "+ str(tTest.pvalue))
 
     return tTest
-     
 
+
+def anovaGroups(matrix, featId, group1, group2, group3):
+
+    """Function for the variables statistical analysis of the three 
+    initial groups using anova"""
+    
+    labPos = 9
+
+    m60 = []
+    m70 = []
+    m80 = []
+
+    #rotula na matriz
+    for i in group1:
+        matrix[i][labPos] = 1
+
+    for i in group2:    
+        matrix[i][labPos] = 2
+
+    for i in group3:
+        matrix[i][labPos] = 3
+
+    #percorre todas as linhas
+    for v in matrix:
+        #monta as matrizes dos grupos
+        if v[9] == 1:
+            m60 = m60 + [v[featId]]
+        elif v[9] == 2:
+            m70 = m70 + [v[featId]]
+        else: 
+            m80 = m80 + [v[featId]]
+
+
+    print("Medias, grupo 60-69:" + str(np.mean(m60)) + "desvio: " + str (np.std(m60)))
+    print("Medias, grupo 70-79:" + str(np.mean(m70)) + "desvio: " + str (np.std(m70)))
+    print("Medias, grupo 80 +: " + str(np.mean(m80)) + "desvio: " + str (np.std(m80)))
+
+    anova = stats.f_oneway(m60, m70, m80)
+    print("p-value anova: " + str(anova.pvalue))
+
+    return anova
+
+ 
 
 
 
