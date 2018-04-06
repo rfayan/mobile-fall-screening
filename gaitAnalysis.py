@@ -17,10 +17,10 @@ from itertools import product
 
 
 # Moacir
-#directory = '/home/maponti/Repos/mobile-fall-screening/data/'
+directory = '/home/maponti/Repos/mobile-fall-screening/data/'
 
 #Patricia
-directory = 'C:\\Users\\Patrícia Bet\\Desktop\\Dados Acelerômetro\\'
+#directory = 'C:\\Users\\Patrícia Bet\\Desktop\\Dados Acelerômetro\\'
 
 #lista de idades(grupos)
 index_60 = [0, 6, 8, 9, 10, 11, 13, 15, 18, 20, 23, 24, 25, 27, 28, 31, 33, 34, 35, 36, 37, 41, 43, 45, 46, 47, 49, 50, 52, 54, 55, 60, 63, 65, 69, 70, 72, 74, 75, 76]
@@ -176,6 +176,53 @@ def espPot (directory, filtering=False):
                 #plt.clf()
 
 
+def segmentTS_TUG(tug, sumFilterSize=300):
+    # filtro para realizar convolucao
+    # h = [1, 1, 1]
+    h = np.ones(sumFilterSize)
+    matSegm = np.convolve(tug, h, mode='same')
+
+    # normalizacao z-score
+    matSegm = (matSegm-np.mean(matSegm)) / np.std(matSegm)
+
+    matSegm[ : int(sumFilterSize/2)] = 0
+    matSegm[-int(sumFilterSize/2) : ] = 0
+
+    # especificar um limiar e pegar apenas valores acima
+    mask = np.zeros(matSegm.shape)
+    mask[np.where(matSegm > 0)] = 1
+
+    # segunda segmentacao (em cima da mascara anterior)
+    matSegm2 = np.convolve(mask, h, mode='same')
+    matSegm2 = (matSegm2-np.mean(matSegm2)) / np.std(matSegm2)
+
+    matSegm2[ : int(sumFilterSize/2)] = 0
+    matSegm2[-int(sumFilterSize/2) : ] = 0
+
+    # especificar um limiar e pegar apenas valores acima
+    mask2 = np.zeros(matSegm2.shape)
+    mask2[np.where(matSegm2 > 0)] = 1
+
+    # filtro
+    size = 100 #trocar aqui
+    for filtro in range(mask.size):
+        accumulator = 0
+        interior = 0
+        while(interior <= size):
+            auxiliary = size+interior
+            if(auxiliary >= mask.size):
+                auxiliary = mask.size-1
+            accumulator += mask[auxiliary]            
+            interior += 1
+        if(mask[size]==0 and accumulator > 0):
+            mask[size]=1
+        if(mask[size]==1 and accumulator == 0):
+            mask[size]=0  
+
+    print(mask)
+    #### segmentacao eh ate aqui
+
+    return mask2, mask
     
 
 def segmentTUGs(directory, filtering=False, sumFilterSize=300):
@@ -193,8 +240,8 @@ def segmentTUGs(directory, filtering=False, sumFilterSize=300):
                 # pega o ultimo elemento apos particionar com \ ou /
                 # desse pega os tres primeiros valores
                 # e depois converte para inteiro
-                #j = int(re.split('\\ |/', f)[-1][0:3]) # Linux
-                j = int(re.split('\\\\', f)[-1][0:3]) # Windows
+                j = int(re.split('\\ |/', f)[-1][0:3]) # Linux
+                #j = int(re.split('\\\\', f)[-1][0:3]) # Windows
 
                 data = genfromtxt(f, delimiter=',')
                 lst = [elem for elem in data]
@@ -210,52 +257,7 @@ def segmentTUGs(directory, filtering=False, sumFilterSize=300):
                 matFusao = np.squeeze(np.asarray(matFusao[1:]))
                 matFusao[0:5] = 1
 
-                # filtro para realizar convolucao
-                # h = [1, 1, 1]
-                h = np.ones(sumFilterSize)
-                matSegm = np.convolve(matFusao, h, mode='same')
-    
-                matSegm = (matSegm-np.mean(matSegm)) / np.std(matSegm)
-
-                matSegm[ : int(sumFilterSize/2)] = 0
-                matSegm[-int(sumFilterSize/2) : ] = 0
-        
-                # especificar um limiar e pegar apenas valores acima
-                mask = np.zeros(matSegm.shape)
-                mask[np.where(matSegm > 0)] = 1
- 
- 
-                # segunda segmentacao
-                matSegm2 = np.convolve(mask, h, mode='same')
-                matSegm2 = (matSegm2-np.mean(matSegm2)) / np.std(matSegm2)
-
-                matSegm2[ : int(sumFilterSize/2)] = 0
-                matSegm2[-int(sumFilterSize/2) : ] = 0
-        
-                # especificar um limiar e pegar apenas valores acima
-                mask2 = np.zeros(matSegm2.shape)
-                mask2[np.where(matSegm2 > 0)] = 1
-
-                                
-                # filtro
-                size = 100 #trocar aqui
-                
-                for filtro in range(mask.size):
-                    accumulator = 0
-                    interior = 0
-                    while(interior <= size):
-                        auxiliary = size+interior
-                        if(auxiliary >= mask.size):
-                            auxiliary = mask.size-1
-                        accumulator += mask[auxiliary]            
-                        interior += 1
-                    if(mask[size]==0 and accumulator > 0):
-                        mask[size]=1
-                    if(mask[size]==1 and accumulator == 0):
-                        mask[size]=0  
-
-                print(mask)
-                
+                mask2, mask = segmentTS_TUG(matFusao, sumFilterSize=sumFilterSize)
 
                 dataFftS = np.fft.fft(matFusao)
                 espPotS = np.abs(dataFftS)**2
@@ -279,7 +281,7 @@ def segmentTUGs(directory, filtering=False, sumFilterSize=300):
 
                 # segmentation
                 ax2 = fig.add_subplot(212)
-                ax2.plot(matSegm)
+                #ax2.plot(matSegm)
                 ax2.plot(mask)
                 ax2.plot(mask2)
                 nome = "dados_segmentacao%03d.pdf"%j
@@ -290,35 +292,40 @@ def segmentTUGs(directory, filtering=False, sumFilterSize=300):
                 plt.clf()
                 plt.close('all')
 
-
-                if j == 6:
-                    return mask2
+                if j == 5:
+                    return mask2, matFusao
 
 
 
 def countTUGs(series):
     ''' Counts the number of connected sequences of -1s inside
         the mask segmenting TUGs
-        Returns the count and a vector with the TUG sizes
+        Returns:
+            count: the number of TUGs detected by segmentation
+            TUGsizes: a vector of 'count' elements, each with the
+                    number of observations for each segmented TUG
+            TUGpos: a vector of 'count' elements, each with the
+                    starting position of each segmented TUG
     '''
-
-    
     count = 0
     curr = 0
     mask = series
     
+    TUGpos = []
+
     # encontra primeiro '1'
     one  = np.argmax(series[curr:])
+    TUGpos.append(one) # guarda a primeira posicao
+
     curr = curr + one
     j = 1
 
     TUGsizes = []
-    
 
     while (one > 0):
         #encontra o proximo '0'
         zero = np.argmin(series[curr:])
-        print( "TUG_%03d:"%j + str(zero))
+        print("TUG_%03d:"%j + str(zero))
         TUGsizes.append(zero)
         curr = curr + zero
         count = count + 1
@@ -326,23 +333,43 @@ def countTUGs(series):
         # encontra o proximo '1'
         one  = np.argmax(series[curr:])
         curr = curr + one
+        TUGpos.append(curr)
 
         j = j + 1
 
-    return count, TUGsizes, mask
+    del TUGpos[-1] # remove last position
+
+    return count, TUGsizes, TUGpos
 
 
-def agroup(count):
+def agroup(count, mask, tugs, min_size = 400, max_size=1000):
+    ''' checks the size of each TUG (observations)
+        in order to split those above some max threshold (max_size)
+        and merge those below some minimum threshold (min_size)
+    '''
 
-    countTUG = count[0]
-    TUGsizes = count[1]
-    mask = count[2]
-    j = 1
+    countTUG = count[0]  # number of TUGs
+    TUGsizes = count[1]  # size of each TUG
+    TUGpos   = count[2]  # starting position of each TUG
 
+    # for each TUG size
+    for j in range(len(TUGsizes)):
+        pos = TUGpos[j]
+        size= TUGsizes[j]
+        # split
+        if (size > max_size):
+           # new size for the first part
+            size = int(size/2)
+            mask[pos+size] = 0
 
+            count, TUGsizes, TUGPos = countTUGs(mask) 
+
+        #elif (s < min_size):
+            # merge
+
+    '''
     if countTUG == 9:
         print("Há 9 TUGs")
-
 
     elif countTUG == 7:
 
@@ -389,8 +416,7 @@ def agroup(count):
         TUGsizes[i + 1] += secondMin
         del TUGsizes[i]
 
-
-
+    '''
     newCount = len(TUGsizes) 
     
     print("TUG_%02d:"%j + str(TUGsizes))
@@ -418,8 +444,8 @@ def featuresAcc (directory, filtering=False):
                 # pega o ultimo elemento apos particionar com \ ou /
                 # desse pega os tres primeiros valores
                 # e depois converte para inteiro
-                #j = int(re.split('\\ |/', f)[-1][0:3])  # Linux
-                j = int(re.split('\\\\', f)[-1][0:3]) # Windows
+                j = int(re.split('\\ |/', f)[-1][0:3])  # Linux
+                #j = int(re.split('\\\\', f)[-1][0:3]) # Windows
 
                 data = genfromtxt(f,delimiter=',')
                 lst = [elem for elem in data]
@@ -453,7 +479,7 @@ def featuresAcc (directory, filtering=False):
                 espPotNyq = espPot[1:maxfr]
 
                 #power spectral entropy
-                pse = sum(espPotNyq*np.log(espPotNyq)) 
+                pse = sum(espPotNyq*np.log(0.0001 + espPotNyq)) 
 
                 #power spectrum peak
                 psp1 = np.max(espPotNyq)
