@@ -7,6 +7,8 @@ import scipy
 import scipy.fftpack
 import pylab
 import heapq
+import pickle as pkl
+import pandas as pd
 
 from scipy import pi
 from scipy import stats
@@ -618,4 +620,96 @@ def anovaGroups(matrix, featId, group1, group2, group3):
  
 
 
+############ Refactoring
+
+def data_read_csv(directory, so="Windows", savefile=True, filename="data_accelerometer.pkl"):
+
+    data = []
+    for root, dirs, files in os.walk(directory):
+        for f in sorted(files):
+            if f.endswith(".csv"):
+
+                # file name
+                f = directory + f
+                print(f)
+
+                # pega o ultimo elemento apos particionar com \ ou /
+                # desse pega os tres primeiros valores
+                # e depois converte para inteiro
+                if so == "Windows":
+                    j = int(re.split('\\\\', f)[-1][0:3]) # Windows
+                elif so == "Linux":
+                    j = int(re.split('\\ |/', f)[-1][0:3]) # Linux
+
+                dataf= genfromtxt(f, delimiter=',')
+                lst = [elem for elem in dataf]
+                N = len(lst)
+                mat = np.bmat(lst)
+                mat = np.reshape(mat,(N,4))
+
+
+                jId=[j,'x'] # cria id com eixo x
+                jId.append(np.squeeze(np.asarray(mat[1:,1]))) # adiciona dados x
+                data.append(jId)
+                jId=[j,'y'] # cria id com eixo y
+                jId.append(np.squeeze(np.asarray(mat[1:,2]))) # adiciona dados y
+                data.append(jId)
+                jId=[j,'z'] # cria id com eixo z
+                jId.append(np.squeeze(np.asarray(mat[1:,3]))) # adiciona dados z
+                data.append(jId)
+              
+    data = pd.DataFrame(data)
+
+    # saves the read data into a file               
+    if savefile:
+        data.to_pickle(filename)
+
+    return data
+
+
+
+def read_data_pkl(filename="data_accelerometer.pkl"):
+    return pd.read_pickle(filename)
+
+
+def read_data_npy(filename="data_fusion.pkl"):
+    return np.load(filename)
+
+
+
+def data_fusion(data, savefile=True, filename="data_fusion.npy"):
+    #get maximum number
+    N = max(data[0])
+
+    dataf = []
+
+    for i in range(N):
+
+        st = (i*3)
+        datai = data.loc[st:st+2]
+        print(datai)
+        # signal fusion = sqrt( x^2 + y^2 + z^2 )
+        x = np.asarray(datai[2][st])
+        y = np.asarray(datai[2][st+1])
+        z = np.asarray(datai[2][st+2])
+        fusion = np.sqrt(np.square(x)+np.square(y)+np.square(z))
+        # convert array of arrays to single array
+        #fusion = np.squeeze(np.asarray(matFusao[1:]))
+
+        dataf.append(fusion)
+        print(fusion)
+ 
+    if savefile:
+        np.save(filename, dataf)
+
+    return data
+
+
+
+## features from data_fusion
+
+
+## segmentation from data_fusion
+
+## pdfs from data (x,y,z) / data_fusion
 
