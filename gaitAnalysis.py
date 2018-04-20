@@ -19,10 +19,10 @@ from itertools import product
 
 
 # Moacir
-directory = '/home/maponti/Repos/mobile-fall-screening/data/'
+#directory = '/home/maponti/Repos/mobile-fall-screening/data/'
 
 #Patricia
-#directory = 'C:\\Users\\Patrícia Bet\\Desktop\\Dados Acelerômetro\\'
+directory = 'C:\\Users\\Patrícia Bet\\Desktop\\Dados Acelerômetro\\'
 
 #lista de idades(grupos)
 index_60 = [0, 6, 8, 9, 10, 11, 13, 15, 18, 20, 23, 24, 25, 27, 28, 31, 33, 34, 35, 36, 37, 41, 43, 45, 46, 47, 49, 50, 52, 54, 55, 60, 63, 65, 69, 70, 72, 74, 75, 76]
@@ -242,8 +242,8 @@ def segmentTUGs(directory, filtering=False, sumFilterSize=300):
                 # pega o ultimo elemento apos particionar com \ ou /
                 # desse pega os tres primeiros valores
                 # e depois converte para inteiro
-                j = int(re.split('\\ |/', f)[-1][0:3]) # Linux
-                #j = int(re.split('\\\\', f)[-1][0:3]) # Windows
+                #j = int(re.split('\\ |/', f)[-1][0:3]) # Linux
+                j = int(re.split('\\\\', f)[-1][0:3]) # Windows
 
                 data = genfromtxt(f, delimiter=',')
                 lst = [elem for elem in data]
@@ -294,7 +294,7 @@ def segmentTUGs(directory, filtering=False, sumFilterSize=300):
                 plt.clf()
                 plt.close('all')
 
-                if j == 5:
+                if j == 50:
                     return mask2, matFusao
 
 
@@ -366,63 +366,12 @@ def agroup(count, mask, tugs, min_size = 400, max_size=1000):
 
             count, TUGsizes, TUGPos = countTUGs(mask) 
 
-        #elif (s < min_size):
-            # merge
-
-    '''
-    if countTUG == 9:
-        print("Há 9 TUGs")
-
-    elif countTUG == 7:
-
-        largest = heapq.nlargest(2, TUGsizes)
-        
-        first = largest[0]
-        i = TUGsizes.index(first)
-        TUGsizes[i] = TUGsizes[i]/2
-        TUGsizes.insert(i, TUGsizes[i])
-
-        second = largest[1]
-        i = TUGsizes.index(second)
-        TUGsizes[i] = TUGsizes[i]/2
-        TUGsizes.insert(i,TUGsizes[i])
-
-
-    elif countTUG == 8: 
-        
-        maximo = max(TUGsizes)
-        i = TUGsizes.index(maximo)
-        TUGsizes[i] = TUGsizes[i]/2
-        TUGsizes.insert(i, TUGsizes[i])      
-        
-   
-    elif countTUG == 10: 
-        
-        minimo = min(TUGsizes)
-        i = TUGsizes.index(minimo)
-        TUGsizes[i+1]+= minimo
-        del TUGsizes[i]
- 
-
-    elif countTUG == 11: 
-        
-        smallest = heapq.nsmallest(2, TUGsizes)
-              
-        firstMin = smallest[0]
-        i = TUGsizes.index(firstMin)
-        TUGsizes[i + 1] += firstMin
-        del TUGsizes[i]
-     
-        secondMin = smallest[1]#não funcionou
-        i = TUGsizes.index(secondMin)
-        TUGsizes[i + 1] += secondMin
-        del TUGsizes[i]
-
-    '''
-    newCount = len(TUGsizes) 
+        #merge
+        #elif (size < min_size):
+           
     
-    print("TUG_%02d:"%j + str(TUGsizes))
-    j = j + 1 
+    newCount = len(TUGsizes)   
+    
     
     return newCount, TUGsizes, mask
 
@@ -446,8 +395,8 @@ def featuresAcc (directory, filtering=False):
                 # pega o ultimo elemento apos particionar com \ ou /
                 # desse pega os tres primeiros valores
                 # e depois converte para inteiro
-                j = int(re.split('\\ |/', f)[-1][0:3])  # Linux
-                #j = int(re.split('\\\\', f)[-1][0:3]) # Windows
+                #j = int(re.split('\\ |/', f)[-1][0:3])  # Linux
+                j = int(re.split('\\\\', f)[-1][0:3]) # Windows
 
                 data = genfromtxt(f,delimiter=',')
                 lst = [elem for elem in data]
@@ -620,9 +569,11 @@ def anovaGroups(matrix, featId, group1, group2, group3):
  
 
 
-############ Refactoring
+#########################  Refactoring
 
 def data_read_csv(directory, so="Windows", savefile=True, filename="data_accelerometer.pkl"):
+
+    """Function to read csv files""" 
 
     data = []
     for root, dirs, files in os.walk(directory):
@@ -667,17 +618,18 @@ def data_read_csv(directory, so="Windows", savefile=True, filename="data_acceler
     return data
 
 
-
 def read_data_pkl(filename="data_accelerometer.pkl"):
     return pd.read_pickle(filename)
 
 
-def read_data_npy(filename="data_fusion.pkl"):
-    return np.load(filename)
 
-
+##fusion from data_read_csv
 
 def data_fusion(data, savefile=True, filename="data_fusion.npy"):
+    
+   
+    """Function to generate the axes fusion"""
+ 
     #get maximum number
     N = max(data[0])
 
@@ -702,14 +654,198 @@ def data_fusion(data, savefile=True, filename="data_fusion.npy"):
     if savefile:
         np.save(filename, dataf)
 
-    return data
+    return dataf
+
+
+def read_data_npy(filename="data_fusion.pkl"):
+    return np.load(filename)
+
 
 
 
 ## features from data_fusion
 
+def data_features(data, filtering=True, savefile=True, filename="featuresAcc.pkl"):
+
+    """Function to generate signal characteristics"""
+
+    featMatrix = []
+    j = 1
+
+    for i in data:
+        dataFftS = np.fft.fft(i)
+        espPot = np.abs(dataFftS)**2
+
+        # filtering
+        if filtering == True:
+            fs = 25
+            dataF = butter_lowpass_filter(i, 3.667 , fs, order=6)
+            dataFftF = np.fft.fft(dataF)
+            espPotF = np.abs(dataFftF)**2
+
+        # number of frequencies to be displayed
+        n = espPot.size
+        nhalf = int(n/2)
+        maxfr = 50
+        timestep = 0.1
+        freq = np.fft.fftfreq(n,timestep)
+
+        espPotNyq = espPot[1:maxfr]
+
+        #power spectral entropy
+        pse = sum(espPotNyq*np.log(0.0001 + espPotNyq)) 
+
+        #power spectrum peak
+        psp1 = np.max(espPotNyq)
+
+        #power spectrum peak frequency
+        pspf1 = np.argmax(espPotNyq)
+
+        #weighted power spectrum peak
+        wpsp = np.argmax(espPotNyq)*np.max(espPotNyq)
+
+        # get second peak pspf e psp
+        espPotNyq[pspf1] = 0
+        espPotNyq[pspf1-1] = 0
+        espPotNyq[pspf1+1] = 0
+                
+        pspf2 = np.argmax(espPotNyq)
+        psp2  = np.max(espPotNyq)
+
+        # get third peak pspf e psp
+        espPotNyq[pspf2] = 0
+        espPotNyq[pspf2-1] = 0
+        espPotNyq[pspf2+1] = 0
+
+        pspf3 = np.argmax(espPotNyq)
+        psp3  = np.max(espPotNyq)
+
+        print("Features:")
+        print("PSE = " + str(pse))
+        print("PSP = " + str(psp1) + " " + str(psp2) + " " + str(psp3))
+        print("PSPF = " + str(pspf1) + " " + str(pspf2) + " " + str(pspf3))
+        print("WPSP = " + str(wpsp))
+
+        features = [pse, psp1, psp2, psp3, pspf1, pspf2, pspf3, wpsp]
+        id_vol = "%03d"%j
+        months = -1
+        j = j + 1
+        featMatrix.append([id_vol] + features + [months])
+
+
+    if savefile:
+        np.save(filename, featMatrix)
+ 
+
+    return featMatrix
+
+
+def read_featuresAcc_npy(filename="featureAcc.pkl"):
+    return np.load(filename)
+
+
+
+def butter_lowpass(cutoff, fs, order=5):
+    nyq = 0.5 * fs
+    normal_cutoff = cutoff / nyq
+    b, a = butter(order, normal_cutoff, btype='low', analog=False)
+    return b, a
+
+
+def butter_lowpass_filter(data, cutoff, fs, order=5):
+    b, a = butter_lowpass(cutoff, fs, order=order)
+    y = lfilter(b, a, data)
+    return y
+
+
+
 
 ## segmentation from data_fusion
 
+def data_segmentTS_TUG(tug, sumFilterSize=300, savefile=True, filename="segmentation.pkl"):
+    
+  
+    maskM = []
+
+    for i in tug:
+        # filtro para realizar convolucao
+        # h = [1, 1, 1]
+        h = np.ones(sumFilterSize)
+        matSegm = np.convolve(i, h, mode='same')
+
+        # normalizacao z-score
+        matSegm = (matSegm-np.mean(matSegm)) / np.std(matSegm)
+
+        matSegm[ : int(sumFilterSize/2)] = 0
+        matSegm[-int(sumFilterSize/2) : ] = 0
+
+        # especificar um limiar e pegar apenas valores acima
+        mask = np.zeros(matSegm.shape)
+        mask[np.where(matSegm > 0)] = 1
+
+
+        # segunda segmentacao (em cima da mascara anterior)
+        matSegm2 = np.convolve(mask, h, mode='same')
+        matSegm2 = (matSegm2-np.mean(matSegm2)) / np.std(matSegm2)
+
+        matSegm2[ : int(sumFilterSize/2)] = 0
+        matSegm2[-int(sumFilterSize/2) : ] = 0
+
+        # especificar um limiar e pegar apenas valores acima
+        mask2 = np.zeros(matSegm2.shape)
+        mask2[np.where(matSegm2 > 0)] = 1
+
+        # filtro
+        size = 100 #trocar aqui
+        for filtro in range(mask.size):
+            accumulator = 0
+            interior = 0
+            while(interior <= size):
+                auxiliary = size+interior
+                if(auxiliary >= mask.size):
+                    auxiliary = mask.size-1
+                accumulator += mask[auxiliary]            
+                interior += 1
+            if(mask[size]==0 and accumulator > 0):
+                mask[size]=1
+            if(mask[size]==1 and accumulator == 0):
+                mask[size]=0  
+
+        print(mask)
+        maskM.append(mask)
+        
+
+        #### segmentacao eh ate aquii
+
+    if savefile:
+        np.save(filename, maskM)
+
+    
+    return maskM
+
+
+def read_segmentation_npy(filename="segmentation.pkl"):
+    return np.load(filename)
+
+ 
+
 ## pdfs from data (x,y,z) / data_fusion
+#faltou o do data x, y, z
+
+
+def generate_Pdf_fusion(fusion):
+    
+    """Function to generate Pdf from data fusion"""
+
+    j = 1
+
+    for i in fusion:
+        plt.plot(i)
+        nome = "dados_fusion%03d.pdf"%j
+        pp = PdfPages(nome)
+        pp.savefig()
+        pp.close()
+        plt.clf()
+        j = j + 1
+
 
