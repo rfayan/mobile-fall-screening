@@ -19,10 +19,10 @@ from itertools import product
 
 
 # Moacir
-#directory = '/home/maponti/Repos/mobile-fall-screening/data/'
+directory = '/home/maponti/Repos/mobile-fall-screening/data/'
 
 #Patricia
-directory = 'C:\\Users\\Patrícia Bet\\Desktop\\Dados Acelerômetro\\'
+#directory = 'C:\\Users\\Patrícia Bet\\Desktop\\Dados Acelerômetro\\'
 
 #lista de idades(grupos)
 index_60 = [0, 6, 8, 9, 10, 11, 13, 15, 18, 20, 23, 24, 25, 27, 28, 31, 33, 34, 35, 36, 37, 41, 43, 45, 46, 47, 49, 50, 52, 54, 55, 60, 63, 65, 69, 70, 72, 74, 75, 76]
@@ -99,6 +99,8 @@ def createMatrixFromCsv(directory):
     return dataAcc                          
                                        
 
+def zscore_normalization(signal):
+    return (signal-np.mean(signal))/np.std(signal)
 
 def espPot (directory, filtering=False):
 
@@ -115,8 +117,8 @@ def espPot (directory, filtering=False):
                 # pega o ultimo elemento apos particionar com \ ou /
                 # desse pega os tres primeiros valores
                 # e depois converte para inteiro
-                #j = int(re.split('\\ |/', f)[-1][0:3]) # Linux
-                j = int(re.split('\\\\', f)[-1][0:3]) # Windows
+                j = int(re.split('\\ |/', f)[-1][0:3]) # Linux
+                #j = int(re.split('\\\\', f)[-1][0:3]) # Windows
 
                 data = genfromtxt(f,delimiter=',')
                 lst = [elem for elem in data]
@@ -368,14 +370,9 @@ def agroup(count, mask, tugs, min_size = 400, max_size=1000):
 
         #merge
         #elif (size < min_size):
-           
     
     newCount = len(TUGsizes)   
-    
-    
     return newCount, TUGsizes, mask
-
-
 
 
 def featuresAcc (directory, filtering=False):
@@ -494,9 +491,19 @@ def tTestFeatures(matrix, featId, indPos, indExc):
     
     """Function for the variables statistical analysis of the two 
     groups formed from the two months of future fall observation 
-    using test t"""
+    using test t
+    
+    matrix - the matrix with rows representing subjects
+             first position is the ID, last position is the label
+    featId - the feature to be tested ( > 0 )
+    
+    indPos - indices of fallers
 
-    labPos = 9
+    indExc - indices of subject to be excluded
+    
+    """
+
+    labPos = 9 # index of the label in the feature vector
         
     mPos = []
     mNeg = []
@@ -515,6 +522,8 @@ def tTestFeatures(matrix, featId, indPos, indExc):
             mPos = mPos + [v[featId]]
         elif v[labPos] == -1:
             mNeg = mNeg + [v[featId]]
+    
+    #TODO: Patricia, alterar abaixo para ficar igual o do ANOVA
     print("Medias, grupo + : " + str(np.mean(mPos)) + " desvio: " + str(np.std(mPos)))
     print("        grupo - : " + str(np.mean(mNeg)) + " desvio: " + str(np.std(mNeg)))
 
@@ -536,18 +545,21 @@ def anovaGroups(matrix, featId, group1, group2, group3):
     m70 = []
     m80 = []
 
+    # copy matrix
+    tmatrix = matrix.deepcopy()
+
     #rotula na matriz
     for i in group1:
-        matrix[i][labPos] = 1
+        tmatrix[i][labPos] = 1
 
     for i in group2:    
-        matrix[i][labPos] = 2
+        tmatrix[i][labPos] = 2
 
     for i in group3:
-        matrix[i][labPos] = 3
+        tmatrix[i][labPos] = 3
 
     #percorre todas as linhas
-    for v in matrix:
+    for v in tmatrix:
         #monta as matrizes dos grupos
         if v[9] == 1:
             m60 = m60 + [v[featId]]
@@ -557,12 +569,12 @@ def anovaGroups(matrix, featId, group1, group2, group3):
             m80 = m80 + [v[featId]]
 
 
-    print("Medias, grupo 60-69:" + str(np.mean(m60)) + "desvio: " + str (np.std(m60)))
-    print("Medias, grupo 70-79:" + str(np.mean(m70)) + "desvio: " + str (np.std(m70)))
-    print("Medias, grupo 80 +: " + str(np.mean(m80)) + "desvio: " + str (np.std(m80)))
-
+    print("Feature %d" % (featId))
+    print("\tMedias, grupo 60-69: %02.4f, desvio: %.4f" %(np.mean(m60), np.std(m60)))
+    print("\tMedias, grupo 70-79: %02.4f, desvio: %.4f" %(np.mean(m70), np.std(m70)))
+    print("\tMedias, grupo 80+  : %02.4f, desvio: %.4f" %(np.mean(m80), np.std(m80)))
     anova = stats.f_oneway(m60, m70, m80)
-    print("p-value anova: " + str(anova.pvalue))
+    print("\tp-value anova: %.4f " % (anova.pvalue))
 
     return anova
 
@@ -665,7 +677,7 @@ def read_data_npy(filename="data_fusion.pkl"):
 
 ## features from data_fusion
 
-def data_features(data, filtering=True, savefile=True, filename="featuresAcc.pkl"):
+def data_features(data, filtering=True, savefile=True, filename="featuresAcc.npy"):
 
     """Function to generate signal characteristics"""
 
@@ -693,7 +705,14 @@ def data_features(data, filtering=True, savefile=True, filename="featuresAcc.pkl
         espPotNyq = espPot[1:maxfr]
 
         #power spectral entropy
-        pse = sum(espPotNyq*np.log(0.0001 + espPotNyq)) 
+        #computed over the Spectrum normalized between 0-1
+        espProb = espPotNyq.copy()
+        espProb = (espProb - np.min(espProb)) / (np.max(espProb) - np.min(espProb))
+        pse = -sum(espProb*np.log(0.0001 + espProb)) 
+
+        # the remaining features are computed over a
+        # z-score normalization (i.e. x-mean/sd)
+        espPotNyq = (espPotNyq-np.mean(espPotNyq)) / np.std(espPotNyq)
 
         #power spectrum peak
         psp1 = np.max(espPotNyq)
@@ -732,10 +751,8 @@ def data_features(data, filtering=True, savefile=True, filename="featuresAcc.pkl
         j = j + 1
         featMatrix.append([id_vol] + features + [months])
 
-
     if savefile:
         np.save(filename, featMatrix)
- 
 
     return featMatrix
 
@@ -764,8 +781,8 @@ def butter_lowpass_filter(data, cutoff, fs, order=5):
 
 def data_segmentTS_TUG(tug, sumFilterSize=300, savefile=True, filename="segmentation.pkl"):
     
-  
     maskM = []
+    segmT = []
 
     for i in tug:
         # filtro para realizar convolucao
@@ -774,7 +791,7 @@ def data_segmentTS_TUG(tug, sumFilterSize=300, savefile=True, filename="segmenta
         matSegm = np.convolve(i, h, mode='same')
 
         # normalizacao z-score
-        matSegm = (matSegm-np.mean(matSegm)) / np.std(matSegm)
+        matSegm = zscore_normalization(matSegm)
 
         matSegm[ : int(sumFilterSize/2)] = 0
         matSegm[-int(sumFilterSize/2) : ] = 0
@@ -783,10 +800,9 @@ def data_segmentTS_TUG(tug, sumFilterSize=300, savefile=True, filename="segmenta
         mask = np.zeros(matSegm.shape)
         mask[np.where(matSegm > 0)] = 1
 
-
         # segunda segmentacao (em cima da mascara anterior)
         matSegm2 = np.convolve(mask, h, mode='same')
-        matSegm2 = (matSegm2-np.mean(matSegm2)) / np.std(matSegm2)
+        matSegm2 = zscore_normalization(matSegm2)
 
         matSegm2[ : int(sumFilterSize/2)] = 0
         matSegm2[-int(sumFilterSize/2) : ] = 0
@@ -811,27 +827,27 @@ def data_segmentTS_TUG(tug, sumFilterSize=300, savefile=True, filename="segmenta
             if(mask[size]==1 and accumulator == 0):
                 mask[size]=0  
 
-        print(mask)
+        # use the mask to segment the TUGs (normalized)
+        segm = zscore_normalization(i)*mask
+
+        #print(mask)
         maskM.append(mask)
-        
+        segmT.append(segm)
 
         #### segmentacao eh ate aquii
 
     if savefile:
         np.save(filename, maskM)
-
     
-    return maskM
+    return maskM, segmT 
 
 
 def read_segmentation_npy(filename="segmentation.pkl"):
     return np.load(filename)
 
  
-
 ## pdfs from data (x,y,z) / data_fusion
-#faltou o do data x, y, z
-
+#faltou o do data x, y, z (use o data_fusion como base)
 
 def generate_Pdf_fusion(fusion):
     
@@ -847,5 +863,6 @@ def generate_Pdf_fusion(fusion):
         pp.close()
         plt.clf()
         j = j + 1
+
 
 
