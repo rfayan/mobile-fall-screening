@@ -547,7 +547,8 @@ def anovaGroups(matrix, featId, group1, group2, group3):
     m80 = []
 
     # copy matrix
-    tmatrix = matrix.deepcopy()
+    tmatrix = np.zeros(matrix.shape)
+    tmatrix[:] = matrix
 
     #rotula na matriz
     for i in group1:
@@ -568,7 +569,6 @@ def anovaGroups(matrix, featId, group1, group2, group3):
             m70 = m70 + [v[featId]]
         else: 
             m80 = m80 + [v[featId]]
-
 
     print("Feature %d" % (featId))
     print("\tMedias, grupo 60-69: %02.4f, desvio: %.4f" %(np.mean(m60), np.std(m60)))
