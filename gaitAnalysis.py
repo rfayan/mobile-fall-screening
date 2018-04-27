@@ -9,6 +9,7 @@ import pylab
 import heapq
 import pickle as pkl
 import pandas as pd
+import copy
 
 from scipy import pi
 from scipy import stats
@@ -19,10 +20,10 @@ from itertools import product
 
 
 # Moacir
-directory = '/home/maponti/Repos/mobile-fall-screening/data/'
+#directory = '/home/maponti/Repos/mobile-fall-screening/data/'
 
 #Patricia
-#directory = 'C:\\Users\\Patrícia Bet\\Desktop\\Dados Acelerômetro\\'
+directory = 'C:\\Users\\Patrícia Bet\\Desktop\\Dados Acelerômetro\\'
 
 #lista de idades(grupos)
 index_60 = [0, 6, 8, 9, 10, 11, 13, 15, 18, 20, 23, 24, 25, 27, 28, 31, 33, 34, 35, 36, 37, 41, 43, 45, 46, 47, 49, 50, 52, 54, 55, 60, 63, 65, 69, 70, 72, 74, 75, 76]
@@ -296,7 +297,7 @@ def segmentTUGs(directory, filtering=False, sumFilterSize=300):
                 plt.clf()
                 plt.close('all')
 
-                if j == 50:
+                if j == 5:
                     return mask2, matFusao
 
 
@@ -523,13 +524,13 @@ def tTestFeatures(matrix, featId, indPos, indExc):
         elif v[labPos] == -1:
             mNeg = mNeg + [v[featId]]
     
-    #TODO: Patricia, alterar abaixo para ficar igual o do ANOVA
-    print("Medias, grupo + : " + str(np.mean(mPos)) + " desvio: " + str(np.std(mPos)))
-    print("        grupo - : " + str(np.mean(mNeg)) + " desvio: " + str(np.std(mNeg)))
+    print("Feature %d" % (featId))
+    print("\tMedias, grupo +: %02.4f, desvio: %.4f" %(np.mean(mPos), np.std(mPos)))
+    print("\tMedias, grupo -: %02.4f, desvio: %.4f" %(np.mean(mNeg), np.std(mNeg)))
 
 
     tTest = stats.ttest_ind(mPos, mNeg) 
-    print("p-value Test-t: "+ str(tTest.pvalue))
+    print("\tp-value t test: %.4f " % (tTest.pvalue))
 
     return tTest
 
@@ -834,7 +835,7 @@ def data_segmentTS_TUG(tug, sumFilterSize=300, savefile=True, filename="segmenta
         maskM.append(mask)
         segmT.append(segm)
 
-        #### segmentacao eh ate aquii
+        #### segmentacao eh ate aqui
 
     if savefile:
         np.save(filename, maskM)
@@ -847,9 +848,34 @@ def read_segmentation_npy(filename="segmentation.pkl"):
 
  
 ## pdfs from data (x,y,z) / data_fusion
-#faltou o do data x, y, z (use o data_fusion como base)
 
-def generate_Pdf_fusion(fusion):
+
+def generate_pdf_data(data):
+
+    """Function to generate pdf from data (axes: x, y, z)"""
+
+    N = max(data[0])
+    j = 1
+    
+    for i in range(N):
+
+        st = (i*3)
+        datai = data.loc[st:st+2]
+        x = np.asarray(datai[2][st])
+        y = np.asarray(datai[2][st+1])
+        z = np.asarray(datai[2][st+2])
+        plt.plot(x)
+        plt.plot(y)
+        plt.plot(z)
+        nome = "pdf_axes%03d.pdf"%j
+        pp = PdfPages(nome)
+        pp.savefig()
+        pp.close()
+        plt.clf()
+        j = j + 1
+
+
+def generate_pdf_fusion(fusion):
     
     """Function to generate Pdf from data fusion"""
 
@@ -857,12 +883,73 @@ def generate_Pdf_fusion(fusion):
 
     for i in fusion:
         plt.plot(i)
-        nome = "dados_fusion%03d.pdf"%j
+        nome = "pdf_fusion%03d.pdf"%j
         pp = PdfPages(nome)
         pp.savefig()
         pp.close()
         plt.clf()
         j = j + 1
+
+
+
+
+def count_TUGs(series):
+    
+    ''' Counts the number of connected sequences of -1s inside
+        the mask segmenting TUGs
+        Returns:
+            count: the number of TUGs detected by segmentation
+            TUGsizes: a vector of 'count' elements, each with the
+                    number of observations for each segmented TUG
+            TUGpos: a vector of 'count' elements, each with the
+                    starting position of each segmented TUG
+    '''
+    mask = series[0]
+    segmentation = series[1]  
+    
+    for i in mask:
+         
+        count = 0
+        curr = 0
+        mask = series
+    
+        TUGpos = []
+
+        # encontra primeiro '1'
+        one = np.argmax(i[curr:])
+        TUGpos.append(one) # guarda a primeira posicao
+
+        curr = curr + one
+        j = 1
+        
+        TUGsizes = []
+
+        while (one > 0):
+            #encontra o proximo '0'
+            zero = np.argmin(i[curr:])
+            print("TUG_%03d:"%j + str(zero))
+            TUGsizes.append(zero)
+            curr = curr + zero
+            count = count + 1
+        
+            # encontra o proximo '1'
+            one  = np.argmax(i[curr:])
+            curr = curr + one
+            TUGpos.append(curr)
+
+            j = j + 1
+
+        del TUGpos[-1] # remove last position
+
+        return count, TUGsizes, TUGpos
+
+
+
+
+
+        
+
+
 
 
 
