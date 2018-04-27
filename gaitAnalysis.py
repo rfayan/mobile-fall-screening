@@ -347,34 +347,6 @@ def countTUGs(series):
     return count, TUGsizes, TUGpos
 
 
-def agroup(count, mask, tugs, min_size = 400, max_size=1000):
-    ''' checks the size of each TUG (observations)
-        in order to split those above some max threshold (max_size)
-        and merge those below some minimum threshold (min_size)
-    '''
-
-    countTUG = count[0]  # number of TUGs
-    TUGsizes = count[1]  # size of each TUG
-    TUGpos   = count[2]  # starting position of each TUG
-
-    # for each TUG size
-    for j in range(len(TUGsizes)):
-        pos = TUGpos[j]
-        size= TUGsizes[j]
-        # split
-        if (size > max_size):
-           # new size for the first part
-            size = int(size/2)
-            mask[pos+size] = 0
-
-            count, TUGsizes, TUGPos = countTUGs(mask) 
-
-        #merge
-        #elif (size < min_size):
-    
-    newCount = len(TUGsizes)   
-    return newCount, TUGsizes, mask
-
 
 def featuresAcc (directory, filtering=False):
 
@@ -634,6 +606,17 @@ def data_read_csv(directory, so="Windows", savefile=True, filename="data_acceler
 def read_data_pkl(filename="data_accelerometer.pkl"):
     return pd.read_pickle(filename)
 
+def strided_app(a, L, S ):  # Window len = L, Stride len/stepsize = S
+    ''' Using numpy strides to apply function along arrays
+        OBS: thanks to Divakar 
+        https://stackoverflow.com/users/3293881/divakar
+        '''
+    nrows = ((a.size-L)//S)+1
+    n = a.strides[0]
+    return np.lib.stride_tricks.as_strided(a, shape=(nrows,L), strides=(S*n,n)) 
+
+def median_filter(data, window_len=3, axis=1):
+    return np.median(strided_app(data, window_len, 1), axis=axis)
 
 
 ##fusion from data_read_csv
@@ -831,11 +814,11 @@ def data_segmentTS_TUG(tug, sumFilterSize=300, savefile=True, filename="segmenta
         # use the mask to segment the TUGs (normalized)
         segm = zscore_normalization(i)*mask
 
+
+        mask = median_filter(mask, window_len=50, axis=1)
         #print(mask)
         maskM.append(mask)
         segmT.append(segm)
-
-        #### segmentacao eh ate aqui
 
     if savefile:
         np.save(filename, maskM)
@@ -846,19 +829,13 @@ def data_segmentTS_TUG(tug, sumFilterSize=300, savefile=True, filename="segmenta
 def read_segmentation_npy(filename="segmentation.pkl"):
     return np.load(filename)
 
- 
 ## pdfs from data (x,y,z) / data_fusion
-
-
 def generate_pdf_data(data):
-
     """Function to generate pdf from data (axes: x, y, z)"""
 
     N = max(data[0])
     j = 1
-    
     for i in range(N):
-
         st = (i*3)
         datai = data.loc[st:st+2]
         x = np.asarray(datai[2][st])
@@ -878,9 +855,7 @@ def generate_pdf_data(data):
 def generate_pdf_fusion(fusion):
     
     """Function to generate Pdf from data fusion"""
-
     j = 1
-
     for i in fusion:
         plt.plot(i)
         nome = "pdf_fusion%03d.pdf"%j
@@ -891,9 +866,7 @@ def generate_pdf_fusion(fusion):
         j = j + 1
 
 
-
-
-def count_TUGs(series):
+def count_TUGs(mask):
     
     ''' Counts the number of connected sequences of -1s inside
         the mask segmenting TUGs
@@ -904,52 +877,97 @@ def count_TUGs(series):
             TUGpos: a vector of 'count' elements, each with the
                     starting position of each segmented TUG
     '''
-    mask = series[0]
-    segmentation = series[1]  
-    
-    for i in mask:
-         
-        count = 0
-        curr = 0
-        mask = series
-    
-        TUGpos = []
+    count = 0
+    curr = 0
+    TUGpos = []
 
-        # encontra primeiro '1'
-        one = np.argmax(i[curr:])
-        TUGpos.append(one) # guarda a primeira posicao
+    # encontra primeiro '1'
+    one = np.argmax(mask[curr:])
+    TUGpos.append(one) # guarda a primeira posicao
 
+    curr = curr + one
+    j = 1
+    
+    TUGsizes = []
+    while (one > 0):
+        #encontra o proximo '0'
+        zero = np.argmin(mask[curr:])
+        print("TUG_%03d:"%j + str(zero))
+        TUGsizes.append(zero)
+        curr = curr + zero
+        count = count + 1
+    
+        # encontra o proximo '1'
+        one  = np.argmax(mask[curr:])
         curr = curr + one
-        j = 1
+        TUGpos.append(curr)
+
+        j = j + 1
+
+    del TUGpos[-1] # remove last position
+
+    return count, TUGsizes, TUGpos
+
+ 
+def count_TUGs_all(series):
+    
+    ''' Counts the number of connected sequences of -1s inside
+        the mask segmenting TUGs
+        Returns:
+            count: the number of TUGs detected by segmentation
+            TUGsizes: a vector of 'count' elements, each with the
+                    number of observations for each segmented TUG
+            TUGpos: a vector of 'count' elements, each with the
+                    starting position of each segmented TUG
+    '''
+    for m in mask:
+        print(m)
+        # call count_TUGs() and append into a single array 
+
+    #return counts
+
+
+def correct_mask(count, mask, debug=False): 
+    #, tugs, min_size = 400, max_size=1000):
+    ''' checks the size of each TUG (observations)
+        in order to split those above some max threshold (max_size)
+        and merge those below some minimum threshold (min_size)
+    '''
+
+    countTUG = count[0]  # number of TUGs
+    TUGsizes = count[1]  # size of each TUG
+    TUGpos   = count[2]  # starting position of each TUG
+
+    while len(TUGsizes) > 9:
+        # starts with the TUG with minimum size
+        minT = np.argmin(TUGsizes) 
+
+        # get positions of minT and its neighbours
+        currT = TUGpos[minT]
+        prevT = TUGpos[minT-1] + TUGsizes[minT-1]
+        nextT = TUGpos[minT+1]
+
+        # test which side to merge with
+        # 0 - previous, 1 - next
+        diff = [currT-prevT, nextT-currT]
+        print(diff)
+        if np.argmin(diff) == 0:
+            mask[prevT-1:currT+1] = 1
+        else:
+            mask[currT:nextT+1] = 1
+
+        # recompute the counting
+        count = count_TUGs(mask)
+        countTUG = count[0]  # number of TUGs
+        TUGsizes = count[1]  # size of each TUG
+        TUGpos   = count[2]  # starting position of each TUG
         
-        TUGsizes = []
-
-        while (one > 0):
-            #encontra o proximo '0'
-            zero = np.argmin(i[curr:])
-            print("TUG_%03d:"%j + str(zero))
-            TUGsizes.append(zero)
-            curr = curr + zero
-            count = count + 1
-        
-            # encontra o proximo '1'
-            one  = np.argmax(i[curr:])
-            curr = curr + one
-            TUGpos.append(curr)
-
-            j = j + 1
-
-        del TUGpos[-1] # remove last position
-
-        return count, TUGsizes, TUGpos
-
-
-
-
-
-        
-
-
-
-
-
+        if (debug):
+            print("Min TUG: %d" % (minT))
+            print("Mask position: %d" % (currT))
+            print(TUGsizes)
+            print(TUGpos)
+            plt.plot(mask)
+            plt.show()
+   
+    return mask
