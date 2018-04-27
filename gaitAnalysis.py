@@ -248,6 +248,8 @@ def butter_lowpass_filter(data, cutoff, fs, order=5):
     return y
 
 
+def zscore_normalization(signal):
+    return (signal-np.mean(signal))/np.std(signal)
 
 
 ## segmentation from data_fusion
@@ -459,6 +461,7 @@ def correct_mask(count, mask, debug=False):
             print(TUGpos)
             plt.plot(mask)
             plt.show()
+
    
     return mask
 
