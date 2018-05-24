@@ -48,7 +48,7 @@ dict_qtde  = {7:1, 9:1, 10:1, 15:1, 27:1, 34:1, 35:1, 40:1, 45:1, 58:1, 59:2, 63
 
 def data_read_csv(directory, so="Windows", savefile=True, filename="data_accelerometer.pkl"):
 
-    """Function to read csv files""" 
+    '''Function to read csv files''' 
 
     data = []
     for root, dirs, files in os.walk(directory):
@@ -97,6 +97,7 @@ def read_data_pkl(filename="data_accelerometer.pkl"):
     return pd.read_pickle(filename)
 
 def strided_app(a, L, S ):  # Window len = L, Stride len/stepsize = S
+    
     ''' Using numpy strides to apply function along arrays
         OBS: thanks to Divakar 
         https://stackoverflow.com/users/3293881/divakar
@@ -109,12 +110,12 @@ def median_filter(data, window_len=3, axis=1):
     return np.median(strided_app(data, window_len, 1), axis=axis)
 
 
+
 ##fusion from data_read_csv
 
 def data_fusion(data, savefile=True, filename="data_fusion.npy"):
     
-   
-    """Function to generate the axes fusion"""
+    '''Function to generate the axes fusion'''
  
     #get maximum number
     N = max(data[0])
@@ -152,7 +153,7 @@ def read_data_npy(filename="data_fusion.pkl"):
 
 def data_features(data, filtering=True, savefile=True, filename="featuresAcc.npy"):
 
-    """Function to generate signal characteristics"""
+    '''Function to generate signal characteristics'''
 
     featMatrix = []
     j = 1
@@ -321,41 +322,6 @@ def read_segmentation_npy(filename="segmentation.pkl"):
     return np.load(filename)
 
 
-## pdfs from data (x,y,z) / data_fusion
-def generate_pdf_data(data):
-    """Function to generate pdf from data (axes: x, y, z)"""
-
-    N = max(data[0])
-    j = 1
-    for i in range(N):
-        st = (i*3)
-        datai = data.loc[st:st+2]
-        x = np.asarray(datai[2][st])
-        y = np.asarray(datai[2][st+1])
-        z = np.asarray(datai[2][st+2])
-        plt.plot(x)
-        plt.plot(y)
-        plt.plot(z)
-        nome = "pdf_axes%03d.pdf"%j
-        pp = PdfPages(nome)
-        pp.savefig()
-        pp.close()
-        plt.clf()
-        j = j + 1
-
-
-def generate_pdf_fusion(fusion):
-    
-    """Function to generate Pdf from data fusion"""
-    j = 1
-    for i in fusion:
-        plt.plot(i)
-        nome = "pdf_fusion%03d.pdf"%j
-        pp = PdfPages(nome)
-        pp.savefig()
-        pp.close()
-        plt.clf()
-        j = j + 1
 
 
 def count_TUGs(mask):
@@ -369,6 +335,7 @@ def count_TUGs(mask):
             TUGpos: a vector of 'count' elements, each with the
                     starting position of each segmented TUG
     '''
+    
     count = 0
     curr = 0
     TUGpos = []
@@ -420,7 +387,7 @@ def count_TUGs_all(series):
 
 
 def correct_mask(count, mask, debug=False): 
-    #, tugs, min_size = 400, max_size=1000):
+    
     ''' checks the size of each TUG (observations)
         in order to split those above some max threshold (max_size)
         and merge those below some minimum threshold (min_size)
@@ -463,7 +430,124 @@ def correct_mask(count, mask, debug=False):
             plt.show()
 
    
-    return mask
+    return count, mask
+
+
+
+def label_TUG(newcount, newmask):
+
+    '''Function to generate a labeled 'mascara', with 1, 2, 3, 4, 5, 6, 7, 8, 9
+    for the different TUGs'''
+
+
+    countTUG= newcount[0]
+    TUGsizes = newcount[1]
+    TUGpos = newcount[2]
+
+    tug1 = TUGpos[0] + TUGsizes[0]
+    newmask[TUGpos[0]:tug1] = 1
+    
+    tug2 = TUGpos[1] + TUGsizes[1]
+    newmask[TUGpos[1]:tug2] = 2
+    
+    tug3 = TUGpos[2] + TUGsizes[2]
+    newmask[TUGpos[2]:tug3] = 3
+    
+    tug4 = TUGpos[3] + TUGsizes[3] 
+    newmask[TUGpos[3]:tug4] = 4
+    
+    tug5 = TUGpos[4] + TUGsizes[4] 
+    newmask[TUGpos[4]:tug5] = 5
+    
+    tug6 = TUGpos[5] + TUGsizes[5]
+    newmask[TUGpos[5]:tug6] = 6
+    
+    tug7 = TUGpos[6] + TUGsizes[6]
+    newmask[TUGpos[6]:tug7] = 7
+    
+    tug8 = TUGpos[7] + TUGsizes[7] 
+    newmask[TUGpos[7]:tug8] = 8
+    
+    tug9 = TUGpos[8] + TUGsizes[8]
+    newmask[TUGpos[8]:tug9] = 9
+
+       
+    return newmask
+
+
+
+## pdfs from data (x,y,z) / data_fusion
+def generate_pdf_data(data, so = "all"):
+    
+    '''Function to generate pdf from data (axes: x, y, z)'''
+
+    if so == "all":
+        N = max(data[0])
+        j = 1
+        for i in range(N):
+            st = (i*3)
+            datai = data.loc[st:st+2]
+            x = np.asarray(datai[2][st])
+            y = np.asarray(datai[2][st+1])
+            z = np.asarray(datai[2][st+2])
+            plt.plot(x)
+            plt.plot(y)
+            plt.plot(z)
+            nome = "pdf_axes%03d.pdf"%j
+            pp = PdfPages(nome)
+            pp.savefig()
+            pp.close()
+            plt.clf()
+            j = j + 1
+
+
+    elif so == "ID":
+
+        IDi = int(input('Número de identificação do voluntário na matriz:'))
+        ID = IDi - 1
+        st = ID * 3
+        datai = data.loc[st:st+2]
+        x = np.asarray(datai[2][st])
+        y = np.asarray(datai[2][st+1])
+        z = np.asarray(datai[2][st+2])
+        plt.plot(x)
+        plt.plot(y)
+        plt.plot(z)
+        #plt.show()
+        nome = "pdf_axesID%03d.pdf"%IDi
+        pp = PdfPages(nome)
+        pp.savefig()
+        pp.close()
+        plt.clf()
+
+
+
+def generate_pdf_fusion(fusion, so="all"):
+    
+    '''Function to generate Pdf from data fusion'''
+    
+    if so == "all":
+       
+        j = 1
+        for i in fusion:
+            plt.plot(i)
+            nome = "pdf_fusion%03d.pdf"%j
+            pp = PdfPages(nome)
+            pp.savefig()
+            pp.close()
+            plt.clf()
+            j = j + 1
+   
+    elif so == "ID":
+        IDi = int(input('Número de identificação do voluntário na matriz:'))
+        ID = IDi - 1
+        IDmatrix = fusion[ID]
+        plt.plot(IDmatrix)
+        #plt.show()
+        nome = "pdf_fusionID%03d.pdf"%IDi
+        pp = PdfPages(nome)
+        pp.savefig()
+        plt.clf()
 
 
 
@@ -471,8 +555,8 @@ def correct_mask(count, mask, debug=False):
 
 def anovaGroups(matrix, featId, group1, group2, group3):
 
-    """Function for the variables statistical analysis of the three 
-    initial groups using anova"""
+    '''Function for the variables statistical analysis of the three 
+    initial groups using anova'''
     
     labPos = 9
 
@@ -516,7 +600,7 @@ def anovaGroups(matrix, featId, group1, group2, group3):
 
 def tTestFeatures(matrix, featId, indPos, indExc):
     
-    """Function for the variables statistical analysis of the two 
+    '''Function for the variables statistical analysis of the two 
     groups formed from the two months of future fall observation 
     using test t
     
@@ -528,7 +612,7 @@ def tTestFeatures(matrix, featId, indPos, indExc):
 
     indExc - indices of subject to be excluded
     
-    """
+    '''
 
     labPos = 9 # index of the label in the feature vector
         
