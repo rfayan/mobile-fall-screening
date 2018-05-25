@@ -435,14 +435,21 @@ def correct_mask(count, mask, debug=False):
 
 
 def label_TUG(newcount, newmask):
-
     '''Function to generate a labeled 'mascara', with 1, 2, 3, 4, 5, 6, 7, 8, 9
-    for the different TUGs'''
+    for the different TUGs
+    Parameters:
+        newcount = TUG count corrected (must have 9 segmented TUGs) with: number of TUGs, sizes and positions
+        newmask  = TUG mask corrected (1 for TUG positions, 0 for non-TUG signal)
+    '''
 
-
+    # splits newcount data into TUG count, sizes and positions
     countTUG= newcount[0]
     TUGsizes = newcount[1]
     TUGpos = newcount[2]
+
+    # TODO Patricia: deixar essa funcao com for para evitar erros quanto nao ha 9 TUGs
+    # for j in range(countTUG):
+    #    variavel j ira assumir valores de 0 ate countTUG-1
 
     tug1 = TUGpos[0] + TUGsizes[0]
     newmask[TUGpos[0]:tug1] = 1
@@ -470,7 +477,6 @@ def label_TUG(newcount, newmask):
     
     tug9 = TUGpos[8] + TUGsizes[8]
     newmask[TUGpos[8]:tug9] = 9
-
        
     return newmask
 
@@ -645,3 +651,60 @@ def tTestFeatures(matrix, featId, indPos, indExc):
     return tTest
 
 
+def save_masks(masks, filename='tug_masks.npy'):
+    '''save masks 
+        Parameters:
+            filename - with .npy extension
+            masks    - array with masks for the participants' TUGs
+    '''
+    np.save(filename, masks)
+    
+def load_masks(filename='tug_masks.npy'):
+    '''load masks from file
+        Parameters:
+            filename - with .npy extension
+    '''
+    return np.load(filename)
+  
+
+###################
+def runExample():
+    fusion = read_data_npy("data_fusion.npy") 
+    mask, segm = data_segmentTS_TUG(fusion)
+    count5 = count_TUGs(mask[5])
+    correct5 = correct_mask(count5, mask[5])
+    label = label_TUG(correct5[0], correct5[1])
+
+
+def TUG_features(data, mask, TUGs,  filtering=True, savefile=True, filename="featuresAcc-TUG.npy"):
+    ''' Extracts features from segmented TUGs  '''
+
+    print("Extracting features from TUGs: "+str(TUGs))
+
+    dataseg = []
+    #for i in range(data.shape[0]):
+    for i in range(2):
+
+        xd = data[i]  # data i
+        xm = mask[i] # label i
+
+        xm_count = count_TUGs(xm)
+        xl = label_TUG(xm_count, xm)
+
+        plt.plot(xd)
+        plt.plot(xl)
+        plt.show()
+        # creates a new signal from xd, containing only the 
+        # segmented labels at xl, defined by TUGs
+        newx = []
+        for l in TUGs:
+            newx = np.concatenate((newx, xd[np.where(xl == l)]))
+
+        plt.plot(newx)
+        plt.show()
+ 
+        dataseg.append(newx)
+
+    featTUGs = data_features(dataseg, filtering=filtering, savefile=savefile, filename=filename)
+
+    return featTUGs, dataseg
