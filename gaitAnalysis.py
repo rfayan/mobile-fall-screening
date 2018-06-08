@@ -32,17 +32,18 @@ index_80 = [2, 12, 19, 29, 30, 44, 51, 59, 67, 73, 78]
 
 
 # listas de caidores e excluidos
-index_faller = [7, 9, 10, 15, 27, 34, 35, 40, 45, 58, 59, 63, 70, 77]
+index_faller   = [7, 9, 10, 15, 24, 27, 34, 35, 40, 45, 58, 59, 63, 70, 77]
 index_faller3M = [9, 10, 35, 40, 59, 70, 77]
 index_faller6M = [7, 15, 27, 34, 46, 58, 59, 63]
+index_faller9M = [10, 24]
 index_excluded = [5, 16, 26, 48, 65, 66]
 
 # dicionario com indices e meses
 # podemos usar meses, e depois se precisar convertemos tudo para '1' (caidor)
-dict_label = {7:6, 15:6, 27:6, 34:6, 46:6, 58:6, 59:6, 63:6, 9:3, 10:3, 35:3, 40:3, 59:3, 70:3, 77:3}
+dict_label = {10:9, 24:9, 7:6, 15:6, 27:6, 34:6, 46:6, 58:6, 59:6, 63:6, 9:3, 10:3, 35:3, 40:3, 59:3, 70:3, 77:3}
 
 # dicionario com o numero de quedas
-dict_qtde  = {7:1, 9:1, 10:1, 15:1, 27:1, 34:1, 35:1, 40:1, 45:1, 58:1, 59:2, 63:1, 70:1, 77:1}
+dict_qtde  = {7:1, 9:1, 10:2, 15:1, 24:1, 27:1, 34:1, 35:1, 40:1, 45:1, 58:1, 59:2, 63:1, 70:1, 77:1}
 
 
 
@@ -67,23 +68,23 @@ def data_read_csv(directory, so="Windows", savefile=True, filename="data_acceler
                 elif so == "Linux":
                     j = int(re.split('\\ |/', f)[-1][0:3]) # Linux
 
-                dataf= genfromtxt(f, delimiter=',')
+                dataf = genfromtxt(f, delimiter=',')
                 lst = [elem for elem in dataf]
                 N = len(lst)
                 mat = np.bmat(lst)
                 mat = np.reshape(mat,(N,4))
 
 
-                jId=[j,'x'] # cria id com eixo x
+                jId = [j,'x'] # cria id com eixo x
                 jId.append(np.squeeze(np.asarray(mat[1:,1]))) # adiciona dados x
                 data.append(jId)
-                jId=[j,'y'] # cria id com eixo y
+                jId = [j,'y'] # cria id com eixo y
                 jId.append(np.squeeze(np.asarray(mat[1:,2]))) # adiciona dados y
                 data.append(jId)
-                jId=[j,'z'] # cria id com eixo z
+                jId = [j,'z'] # cria id com eixo z
                 jId.append(np.squeeze(np.asarray(mat[1:,3]))) # adiciona dados z
                 data.append(jId)
-              
+
     data = pd.DataFrame(data)
 
     # saves the read data into a file               
@@ -97,7 +98,7 @@ def read_data_pkl(filename="data_accelerometer.pkl"):
     return pd.read_pickle(filename)
 
 def strided_app(a, L, S ):  # Window len = L, Stride len/stepsize = S
-    
+
     ''' Using numpy strides to apply function along arrays
         OBS: thanks to Divakar 
         https://stackoverflow.com/users/3293881/divakar
@@ -114,9 +115,9 @@ def median_filter(data, window_len=3, axis=1):
 ##fusion from data_read_csv
 
 def data_fusion(data, savefile=True, filename="data_fusion.npy"):
-    
+
     '''Function to generate the axes fusion'''
- 
+
     #get maximum number
     N = max(data[0])
 
@@ -137,7 +138,7 @@ def data_fusion(data, savefile=True, filename="data_fusion.npy"):
 
         dataf.append(fusion)
         print(fusion)
- 
+
     if savefile:
         np.save(filename, dataf)
 
@@ -201,7 +202,7 @@ def data_features(data, filtering=True, savefile=True, filename="featuresAcc.npy
         espPotNyq[pspf1] = 0
         espPotNyq[pspf1-1] = 0
         espPotNyq[pspf1+1] = 0
-                
+
         pspf2 = np.argmax(espPotNyq)
         psp2  = np.max(espPotNyq)
 
@@ -256,7 +257,7 @@ def zscore_normalization(signal):
 ## segmentation from data_fusion
 
 def data_segmentTS_TUG(tug, sumFilterSize=300, savefile=True, filename="segmentation.pkl"):
-    
+
     maskM = []
     segmT = []
 
@@ -314,7 +315,7 @@ def data_segmentTS_TUG(tug, sumFilterSize=300, savefile=True, filename="segmenta
 
     if savefile:
         np.save(filename, maskM)
-    
+
     return maskM, segmT 
 
 
@@ -325,7 +326,7 @@ def read_segmentation_npy(filename="segmentation.pkl"):
 
 
 def count_TUGs(mask):
-    
+
     ''' Counts the number of connected sequences of -1s inside
         the mask segmenting TUGs
         Returns:
@@ -335,7 +336,7 @@ def count_TUGs(mask):
             TUGpos: a vector of 'count' elements, each with the
                     starting position of each segmented TUG
     '''
-    
+
     count = 0
     curr = 0
     TUGpos = []
@@ -346,8 +347,9 @@ def count_TUGs(mask):
 
     curr = curr + one
     j = 1
-    
+
     TUGsizes = []
+
     while (one > 0):
         #encontra o proximo '0'
         zero = np.argmin(mask[curr:])
@@ -355,7 +357,7 @@ def count_TUGs(mask):
         TUGsizes.append(zero)
         curr = curr + zero
         count = count + 1
-    
+
         # encontra o proximo '1'
         one  = np.argmax(mask[curr:])
         curr = curr + one
@@ -367,8 +369,8 @@ def count_TUGs(mask):
 
     return count, TUGsizes, TUGpos
 
- 
-def count_TUGs_all(series):
+
+def count_TUGs_all(mask):
     
     ''' Counts the number of connected sequences of -1s inside
         the mask segmenting TUGs
@@ -379,15 +381,19 @@ def count_TUGs_all(series):
             TUGpos: a vector of 'count' elements, each with the
                     starting position of each segmented TUG
     '''
-    for m in mask:
-        print(m)
-        # call count_TUGs() and append into a single array 
+    newcount = []
 
-    #return counts
-
+    for i in mask:
+        count = count_TUGs(mask[i])
+        
+        newcount.append(count)
+        
+        #print(m)
+    
+    return newcount
 
 def correct_mask(count, mask, debug=False): 
-    
+
     ''' checks the size of each TUG (observations)
         in order to split those above some max threshold (max_size)
         and merge those below some minimum threshold (min_size)
@@ -420,7 +426,7 @@ def correct_mask(count, mask, debug=False):
         countTUG = count[0]  # number of TUGs
         TUGsizes = count[1]  # size of each TUG
         TUGpos   = count[2]  # starting position of each TUG
-        
+
         if (debug):
             print("Min TUG: %d" % (minT))
             print("Mask position: %d" % (currT))
@@ -429,62 +435,65 @@ def correct_mask(count, mask, debug=False):
             plt.plot(mask)
             plt.show()
 
-   
     return count, mask
 
 
-
 def label_TUG(newcount, newmask):
-    '''Function to generate a labeled 'mascara', with 1, 2, 3, 4, 5, 6, 7, 8, 9
+    
+    ''' Function to generate a labeled 'mascara', with 1, 2, 3, 4, 5, 6, 7, 8, 9
     for the different TUGs
     Parameters:
         newcount = TUG count corrected (must have 9 segmented TUGs) with: number of TUGs, sizes and positions
         newmask  = TUG mask corrected (1 for TUG positions, 0 for non-TUG signal)
     '''
-
+    
     # splits newcount data into TUG count, sizes and positions
     countTUG= newcount[0]
     TUGsizes = newcount[1]
     TUGpos = newcount[2]
 
-    # TODO Patricia: deixar essa funcao com for para evitar erros quanto nao ha 9 TUGs
-    # for j in range(countTUG):
-    #    variavel j ira assumir valores de 0 ate countTUG-1
-
+    ID = 0
+    for j in range(countTUG):
+        tug = TUGpos[ID] + TUGsizes[ID]
+        newmask[TUGpos[ID]:tug] = ID + 1
+        ID = ID + 1
+    
+    '''        
     tug1 = TUGpos[0] + TUGsizes[0]
     newmask[TUGpos[0]:tug1] = 1
-    
+
     tug2 = TUGpos[1] + TUGsizes[1]
     newmask[TUGpos[1]:tug2] = 2
-    
+
     tug3 = TUGpos[2] + TUGsizes[2]
     newmask[TUGpos[2]:tug3] = 3
-    
+
     tug4 = TUGpos[3] + TUGsizes[3] 
     newmask[TUGpos[3]:tug4] = 4
-    
+
     tug5 = TUGpos[4] + TUGsizes[4] 
     newmask[TUGpos[4]:tug5] = 5
-    
+
     tug6 = TUGpos[5] + TUGsizes[5]
     newmask[TUGpos[5]:tug6] = 6
-    
+
     tug7 = TUGpos[6] + TUGsizes[6]
     newmask[TUGpos[6]:tug7] = 7
-    
+
     tug8 = TUGpos[7] + TUGsizes[7] 
     newmask[TUGpos[7]:tug8] = 8
-    
+
     tug9 = TUGpos[8] + TUGsizes[8]
     newmask[TUGpos[8]:tug9] = 9
-       
-    return newmask
 
+    '''
+    
+    return newmask
 
 
 ## pdfs from data (x,y,z) / data_fusion
 def generate_pdf_data(data, so = "all"):
-    
+
     '''Function to generate pdf from data (axes: x, y, z)'''
 
     if so == "all":
@@ -508,7 +517,6 @@ def generate_pdf_data(data, so = "all"):
 
 
     elif so == "ID":
-
         IDi = int(input('Número de identificação do voluntário na matriz:'))
         ID = IDi - 1
         st = ID * 3
@@ -529,11 +537,11 @@ def generate_pdf_data(data, so = "all"):
 
 
 def generate_pdf_fusion(fusion, so="all"):
-    
+
     '''Function to generate Pdf from data fusion'''
-    
+
     if so == "all":
-       
+
         j = 1
         for i in fusion:
             plt.plot(i)
@@ -543,7 +551,7 @@ def generate_pdf_fusion(fusion, so="all"):
             pp.close()
             plt.clf()
             j = j + 1
-   
+
     elif so == "ID":
         IDi = int(input('Número de identificação do voluntário na matriz:'))
         ID = IDi - 1
@@ -563,7 +571,7 @@ def anovaGroups(matrix, featId, group1, group2, group3):
 
     '''Function for the variables statistical analysis of the three 
     initial groups using anova'''
-    
+
     labPos = 9
 
     m60 = []
@@ -605,23 +613,23 @@ def anovaGroups(matrix, featId, group1, group2, group3):
 
 
 def tTestFeatures(matrix, featId, indPos, indExc):
-    
+
     '''Function for the variables statistical analysis of the two 
     groups formed from the two months of future fall observation 
     using test t
-    
+
     matrix - the matrix with rows representing subjects
              first position is the ID, last position is the label
     featId - the feature to be tested ( > 0 )
-    
+
     indPos - indices of fallers
 
     indExc - indices of subject to be excluded
-    
+
     '''
 
     labPos = 9 # index of the label in the feature vector
-        
+
     mPos = []
     mNeg = []
 
@@ -639,7 +647,7 @@ def tTestFeatures(matrix, featId, indPos, indExc):
             mPos = mPos + [v[featId]]
         elif v[labPos] == -1:
             mNeg = mNeg + [v[featId]]
-    
+
     print("Feature %d" % (featId))
     print("\tMedias, grupo +: %02.4f, desvio: %.4f" %(np.mean(mPos), np.std(mPos)))
     print("\tMedias, grupo -: %02.4f, desvio: %.4f" %(np.mean(mNeg), np.std(mNeg)))
@@ -658,14 +666,14 @@ def save_masks(masks, filename='tug_masks.npy'):
             masks    - array with masks for the participants' TUGs
     '''
     np.save(filename, masks)
-    
+
 def load_masks(filename='tug_masks.npy'):
     '''load masks from file
         Parameters:
             filename - with .npy extension
     '''
     return np.load(filename)
-  
+
 
 ###################
 def runExample():
@@ -689,22 +697,84 @@ def TUG_features(data, mask, TUGs,  filtering=True, savefile=True, filename="fea
         xm = mask[i] # label i
 
         xm_count = count_TUGs(xm)
-        xl = label_TUG(xm_count, xm)
+        xm_count, new_xm = correct_mask(xm_count, xm)
+        xl = label_TUG(xm_count, new_xm)
 
         plt.plot(xd)
         plt.plot(xl)
-        plt.show()
+        #plt.show()
+        
         # creates a new signal from xd, containing only the 
         # segmented labels at xl, defined by TUGs
         newx = []
+
         for l in TUGs:
             newx = np.concatenate((newx, xd[np.where(xl == l)]))
 
         plt.plot(newx)
         plt.show()
- 
+
         dataseg.append(newx)
 
     featTUGs = data_features(dataseg, filtering=filtering, savefile=savefile, filename=filename)
 
     return featTUGs, dataseg
+
+
+def correct_manualTUG(mask):
+
+    mask[2][1954:2976] = 1
+
+    mask[3][:369] = 0
+    mask[3][391:901] = 1
+    mask[3][2740:3638] = 1
+    mask[3][3707:5139] = 0
+
+    mask[13][2727:3314] = 0
+    mask[13][3337:4362] = 1
+    mask[13][10366:10563] = 0
+    mask[13][10599:11696] = 1
+
+    mask[14][1564:2305] = 1
+    mask[14][3170:4198] = 1
+    mask[14][6810:6926] = 0
+    mask[14][7512:7736] = 1
+    mask[14][10739:11134] = 1
+
+    mask[16][560:570] = 0
+    mask[16][842:1152] = 0
+    mask[16][1508:1526] = 0
+    mask[16][1927:2301] = 0
+    mask[16][2566:2848] = 0
+    mask[16][3040:3067] = 0
+    mask[16][3459:3541] = 0
+    mask[16][3815:3869] = 0
+
+    mask[24][130:750] = 1
+    mask[24][5129:6044] = 1
+    mask[24][8498:9169] = 1
+
+    mask[30][11130:11360] = 1
+    mask[30][11384:11553] = 0
+
+    mask[42][10202:10802] = 0
+
+    mask[54][:1145] = 0
+    mask[54][1146:1806] = 1
+    mask[54][1809:2513] = 0
+    mask[54][2511:3105] = 1
+
+    mask[59][:1417] = 0
+    mask[5][3470:4927] = 1
+    mask[59][8257:9492] = 1
+    mask[59][10921:11754] = 1
+    mask[59][11823:12045] = 0
+    mask[59][12073:13100] = 1
+
+    return mask 
+
+
+
+
+
+
