@@ -200,27 +200,43 @@ def data_features(data, filtering=True, savefile=True, filename="featuresAcc.npy
 
         # get second peak pspf e psp
         espPotNyq[pspf1] = 0
-        espPotNyq[pspf1-1] = 0
-        espPotNyq[pspf1+1] = 0
+        if (pspf1 > 0):
+            espPotNyq[pspf1-1] = 0
+        if (pspf1 < len(espPotNyq)-1):
+            espPotNyq[pspf1+1] = 0
 
         pspf2 = np.argmax(espPotNyq)
         psp2  = np.max(espPotNyq)
 
         # get third peak pspf e psp
         espPotNyq[pspf2] = 0
-        espPotNyq[pspf2-1] = 0
-        espPotNyq[pspf2+1] = 0
+        if (pspf2 > 0):
+            espPotNyq[pspf2-1] = 0
+        if (pspf2 < len(espPotNyq)-1):
+            espPotNyq[pspf2+1] = 0
 
         pspf3 = np.argmax(espPotNyq)
         psp3  = np.max(espPotNyq)
+
+        # generate weights for 1 to 50 Hz
+        weights = (50-np.arange(50))/50.0
+        # weight frequency coefficients 
+        maxF = np.max(espPot[:maxfr])
+        freqw = (((espPot[:maxfr]/psp1)*weights))
+        cpt = np.sum(freqw)
+
+        pspf1 = pspf1+1
+        pspf2 = pspf2+1
+        pspf3 = pspf3+1
 
         print("Features:")
         print("PSE = " + str(pse))
         print("PSP = " + str(psp1) + " " + str(psp2) + " " + str(psp3))
         print("PSPF = " + str(pspf1) + " " + str(pspf2) + " " + str(pspf3))
         print("WPSP = " + str(wpsp))
+        print("CPTs = " + str(cpt))
 
-        features = [pse, psp1, psp2, psp3, pspf1, pspf2, pspf3, wpsp]
+        features = [pse, psp1, psp2, psp3, pspf1, pspf2, pspf3, wpsp, cpt]
         id_vol = "%03d"%j
         months = -1
         j = j + 1
@@ -690,8 +706,8 @@ def TUG_features(data, mask, TUGs,  filtering=True, savefile=True, filename="fea
     print("Extracting features from TUGs: "+str(TUGs))
 
     dataseg = []
-    #for i in range(data.shape[0]):
-    for i in range(2):
+    for i in range(data.shape[0]):
+    #for i in range(2):
 
         xd = data[i]  # data i
         xm = mask[i] # label i
@@ -700,8 +716,8 @@ def TUG_features(data, mask, TUGs,  filtering=True, savefile=True, filename="fea
         xm_count, new_xm = correct_mask(xm_count, xm)
         xl = label_TUG(xm_count, new_xm)
 
-        plt.plot(xd)
-        plt.plot(xl)
+        #plt.plot(xd)
+        #plt.plot(xl)
         #plt.show()
         
         # creates a new signal from xd, containing only the 
@@ -711,8 +727,8 @@ def TUG_features(data, mask, TUGs,  filtering=True, savefile=True, filename="fea
         for l in TUGs:
             newx = np.concatenate((newx, xd[np.where(xl == l)]))
 
-        plt.plot(newx)
-        plt.show()
+        #plt.plot(newx)
+        #plt.show()
 
         dataseg.append(newx)
 
