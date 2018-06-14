@@ -145,7 +145,7 @@ def data_fusion(data, savefile=True, filename="data_fusion.npy"):
     return dataf
 
 
-def read_data_npy(filename="data_fusion.pkl"):
+def read_data_npy(filename="data_fusion.npy"):
     return np.load(filename)
 
 
@@ -248,7 +248,7 @@ def data_features(data, filtering=True, savefile=True, filename="featuresAcc.npy
     return featMatrix
 
 
-def read_featuresAcc_npy(filename="featureAcc.pkl"):
+def read_featuresAcc_npy(filename="featuresAcc.npy"):
     return np.load(filename)
 
 
@@ -272,7 +272,7 @@ def zscore_normalization(signal):
 
 ## segmentation from data_fusion
 
-def data_segmentTS_TUG(tug, sumFilterSize=300, savefile=True, filename="segmentation.pkl"):
+def data_segmentTS_TUG(tug, sumFilterSize=300, savefile=True, filename="segmentation.npy"):
 
     maskM = []
     segmT = []
@@ -335,7 +335,7 @@ def data_segmentTS_TUG(tug, sumFilterSize=300, savefile=True, filename="segmenta
     return maskM, segmT 
 
 
-def read_segmentation_npy(filename="segmentation.pkl"):
+def read_segmentation_npy(filename="segmentation.npy"):
     return np.load(filename)
 
 
@@ -644,7 +644,7 @@ def tTestFeatures(matrix, featId, indPos, indExc):
 
     '''
 
-    labPos = 9 # index of the label in the feature vector
+    labPos = 10 # index of the label in the feature vector
 
     mPos = []
     mNeg = []
@@ -716,9 +716,9 @@ def TUG_features(data, mask, TUGs,  filtering=True, savefile=True, filename="fea
         xm_count, new_xm = correct_mask(xm_count, xm)
         xl = label_TUG(xm_count, new_xm)
 
-        #plt.plot(xd)
-        #plt.plot(xl)
-        #plt.show()
+        plt.plot(xd)
+        plt.plot(xl)
+        plt.show()
         
         # creates a new signal from xd, containing only the 
         # segmented labels at xl, defined by TUGs
@@ -734,18 +734,43 @@ def TUG_features(data, mask, TUGs,  filtering=True, savefile=True, filename="fea
 
     featTUGs = data_features(dataseg, filtering=filtering, savefile=savefile, filename=filename)
 
-    return featTUGs, dataseg
+    #if savefile:
+     #   np.save(featTUGs, dataseg)
+
+    return featTUGs #dataseg 
+
+
+def read__TUGfeatures_npy(filename="featuresAcc-TUG.npy"):
+    return np.load(filename)
+
 
 
 def correct_manualTUG(mask):
 
+    mask[0][8350:8528] = 1
+
     mask[2][1954:2976] = 1
+    mask[2][6115:6364] = 1 #
 
     mask[3][:369] = 0
     mask[3][391:901] = 1
     mask[3][2740:3638] = 1
     mask[3][3707:5139] = 0
 
+    mask[4][2968:4007] = 1
+    mask[4][11794:12944] = 1
+
+    mask[6][7718:7808] = 1
+    mask[6][8978:9113] = 1
+
+    mask[7][2499:2948] = 0
+
+    mask[8][2513:2993] = 1
+
+    mask[10][8256:8689] = 1
+
+    mask[12][8514:8767] = 1
+    
     mask[13][2727:3314] = 0
     mask[13][3337:4362] = 1
     mask[13][10366:10563] = 0
@@ -757,6 +782,8 @@ def correct_manualTUG(mask):
     mask[14][7512:7736] = 1
     mask[14][10739:11134] = 1
 
+    mask[15][6440:7803] = 1
+
     mask[16][560:570] = 0
     mask[16][842:1152] = 0
     mask[16][1508:1526] = 0
@@ -766,26 +793,137 @@ def correct_manualTUG(mask):
     mask[16][3459:3541] = 0
     mask[16][3815:3869] = 0
 
+    mask[17][2728:2910] = 1
+    mask[17][4241:4402] = 1
+    mask[17][5369:5583] = 1
+    mask[17][6485:6721] = 1
+    mask[17][9566:9749] = 1
+    
+    mask[22][7849:7967] = 1
+    mask[22][9771:9964] = 1
+
     mask[24][130:750] = 1
     mask[24][5129:6044] = 1
     mask[24][8498:9169] = 1
 
+    mask[25][3714:3934] = 1
+    mask[25][6273:6472] = 1
+
+    mask[27][5157:6064] = 1
+
+    mask[28][3331:4069] = 1
+    mask[28][1666:2163] = 0
+
     mask[30][11130:11360] = 1
     mask[30][11384:11553] = 0
 
+    mask[32][1031:1344] = 1
+    mask[32][8279:8407] = 1
+
+    mask[33][2714:3663] = 1
+    mask[33][8113:8283] = 1
+
+    mask[35][3792:4913] = 1
+
+    mask[36][921:1122] = 1
+    mask[36][3532:3754] = 1
+    mask[36][6609:6757] = 1
+    mask[36][9622:9897] = 1
+
+    mask[38][2747:3245] = 0
+    mask[38][3290:4198] = 1
+
+    mask[40][1280:1557] = 1
+    mask[40][2432:2594] = 1
+    mask[40][3769:4080] = 1
+    mask[40][7122:7456] = 1
+    mask[40][9669:10671] = 1
+
     mask[42][10202:10802] = 0
+
+    mask[44][730:1531] = 1
+    mask[44][2003:2717] = 1
+    mask[44][3947:5605] = 1
+    mask[44][8922:10366] = 1
+    mask[44][13210:13696] = 1
+
+    mask[49][987:1735] = 1
+    mask[49][2322:2858] = 1
+    mask[49][3981:4954] = 1
+    mask[49][10719:11630] = 1
+
+    mask[50][1791:2279] = 1
+    mask[50][2317:2825] = 0
+    mask[50][5314:5476] = 0
+    mask[50][5496:6367] = 1
+    mask[50][6874:7066] = 1
+    mask[50][8626:8808] = 1
 
     mask[54][:1145] = 0
     mask[54][1146:1806] = 1
     mask[54][1809:2513] = 0
     mask[54][2511:3105] = 1
 
+    mask[55][1357:1924] = 1
+    mask[55][2268:2936] = 1
+    mask[55][5807:5965] = 1
+
+    mask[56][5439:5765] = 0
+    mask[56][5767:6390] = 1
+    mask[56][10440:10578] = 0
+    mask[56][10579:11803] = 1
+
+    mask[58][4511:4850] = 1
+    mask[58][10553:10943] = 0
+
     mask[59][:1417] = 0
-    mask[5][3470:4927] = 1
+    mask[59][3470:4928] = 1
     mask[59][8257:9492] = 1
     mask[59][10921:11754] = 1
     mask[59][11823:12045] = 0
     mask[59][12073:13100] = 1
+
+    mask[61][2418:3072] = 1
+    mask[61][5610:6124] = 1
+
+    mask[62][7885:8287] = 1
+    mask[62][11248:11504] = 1
+
+    mask[64][5928:6062] = 1
+
+    mask[65][2103:2747] = 1
+    mask[65][5356:6318] = 1
+    mask[65][9402:9772] = 1
+
+    mask[69][1337:1813] = 1
+    mask[69][2621:2911] = 1
+    mask[69][5967:6288] = 1
+    mask[69][9509:9716] = 1
+
+    mask[70][3115:3550] = 1
+    mask[70][6220:6445] = 1
+
+    mask[71][2582:2809] = 1
+    mask[71][5845:6138] = 1
+    mask[71][8606:8852] = 1
+
+    mask[72][2456:3172] = 1
+    mask[72][5812:6296] = 1
+    mask[72][7970:8648] = 1
+
+    mask[74][3406:3615] = 1
+    mask[74][6195:6442] = 1
+    mask[74][8709:8842] = 1
+
+    mask[75][2778:2945] = 1
+    mask[75][6184:6596] = 1
+    mask[75][8834:9168] = 1
+    
+    mask[77][2664:3647] = 1
+
+    mask[78][8594:8925] = 1
+    mask[78][10718:11422] = 1
+    mask[78][12111:13063] = 1
 
     return mask 
 
