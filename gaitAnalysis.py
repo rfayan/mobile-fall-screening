@@ -152,7 +152,7 @@ def read_data_npy(filename="data_fusion.npy"):
 
 ## features from data_fusion
 
-def data_features(data, filtering=True, savefile=True, filename="featuresAcc.npy"):
+def data_features(data, filtering=True, debug=False, savefile=True, filename="featuresAcc.npy"):
 
     '''Function to generate signal characteristics'''
 
@@ -160,16 +160,18 @@ def data_features(data, filtering=True, savefile=True, filename="featuresAcc.npy
     j = 1
 
     for i in data:
-        dataFftS = np.fft.fft(i)
-        espPot = np.abs(dataFftS)**2
-
         # filtering
         if filtering == True:
-            fs = 25
-            dataF = butter_lowpass_filter(i, 3.667 , fs, order=6)
-            dataFftF = np.fft.fft(dataF)
-            espPotF = np.abs(dataFftF)**2
+            fs = 100
+            datafilt = butter_lowpass_filter(i, 3.667, fs, order=3)
+            dataF = np.fft.fft(datafilt)
+        else:
+            # Fourier Transform of the data 
+            dataF = np.fft.fft(i)
 
+        # Power Spectrum of the data
+        espPot = np.power(np.abs(dataF),2)
+ 
         # number of frequencies to be displayed
         n = espPot.size
         nhalf = int(n/2)
@@ -179,7 +181,7 @@ def data_features(data, filtering=True, savefile=True, filename="featuresAcc.npy
 
         espPotNyq = espPot[1:maxfr]
 
-        #power spectral entropy
+        #1-power spectral entropy
         #computed over the Spectrum normalized between 0-1
         espProb = espPotNyq.copy()
         espProb = (espProb - np.min(espProb)) / (np.max(espProb) - np.min(espProb))
@@ -189,52 +191,64 @@ def data_features(data, filtering=True, savefile=True, filename="featuresAcc.npy
         # z-score normalization (i.e. x-mean/sd)
         espPotNyq = (espPotNyq-np.mean(espPotNyq)) / np.std(espPotNyq)
 
-        #power spectrum peak
+        #2-power spectrum peak
         psp1 = np.max(espPotNyq)
 
-        #power spectrum peak frequency
+        #3-power spectrum peak frequency
         pspf1 = np.argmax(espPotNyq)
 
-        #weighted power spectrum peak
+        #4-weighted power spectrum peak
         wpsp = np.argmax(espPotNyq)*np.max(espPotNyq)
 
-        # get second peak pspf e psp
+        # get second peak pspf / psp (removing 3 psp1 neighbours)
         espPotNyq[pspf1] = 0
-        if (pspf1 > 0):
-            espPotNyq[pspf1-1] = 0
-        if (pspf1 < len(espPotNyq)-1):
-            espPotNyq[pspf1+1] = 0
+        cut3 = max(0,pspf1-3)
+        espPotNyq[cut3:pspf1] = 0
+        cut3 = min(len(espPotNyq),pspf1+3)
+        espPotNyq[pspf1:(cut3+1)] = 0
 
         pspf2 = np.argmax(espPotNyq)
         psp2  = np.max(espPotNyq)
 
-        # get third peak pspf e psp
+        # get third peak pspf / psp (removing 2 psp2 neighbours)
         espPotNyq[pspf2] = 0
-        if (pspf2 > 0):
-            espPotNyq[pspf2-1] = 0
-        if (pspf2 < len(espPotNyq)-1):
-            espPotNyq[pspf2+1] = 0
-
+        cut3 = max(0,pspf2-2)
+        espPotNyq[cut3:pspf2] = 0
+        cut3 = min(len(espPotNyq),pspf2+2)
+        espPotNyq[pspf2:(cut3+1)] = 0
+        
         pspf3 = np.argmax(espPotNyq)
         psp3  = np.max(espPotNyq)
 
+        #5- cpt
         # generate weights for 1 to 50 Hz
-        weights = (50-np.arange(50))/50.0
+        # weights = (50-np.arange(50))/50.0 # weights from 1 to ~0
+        weights = (50-np.arange(0,50,0.5))/50.0
+        weights = weights[:maxfr]
+
         # weight frequency coefficients 
         maxF = np.max(espPot[:maxfr])
-        freqw = (((espPot[:maxfr]/psp1)*weights))
-        cpt = np.sum(freqw)
+        freqw = espPot[:maxfr]*weights
+        maxfp = np.max(freqw)
+
+        cpt = (np.sum(freqw/maxfp)-1)*100.0
 
         pspf1 = pspf1+1
         pspf2 = pspf2+1
         pspf3 = pspf3+1
-
         print("Features:")
         print("PSE = " + str(pse))
         print("PSP = " + str(psp1) + " " + str(psp2) + " " + str(psp3))
         print("PSPF = " + str(pspf1) + " " + str(pspf2) + " " + str(pspf3))
         print("WPSP = " + str(wpsp))
         print("CPTs = " + str(cpt))
+
+        if (debug):
+            plt.plot(np.arange(1,maxfr), espPot[1:maxfr], color='k')
+            plt.axvline(x=int(pspf1),color='r', linestyle='-') 
+            plt.axvline(x=int(pspf2),color='g', linestyle='--') 
+            plt.axvline(x=int(pspf3),color='b', linestyle=':') 
+            plt.show()
 
         features = [pse, psp1, psp2, psp3, pspf1, pspf2, pspf3, wpsp, cpt]
         id_vol = "%03d"%j
@@ -926,9 +940,5 @@ def correct_manualTUG(mask):
     mask[78][12111:13063] = 1
 
     return mask 
-
-
-
-
 
 
