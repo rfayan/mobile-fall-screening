@@ -32,15 +32,16 @@ index_80 = [2, 12, 19, 29, 30, 44, 51, 59, 67, 73, 78]
 
 
 # listas de caidores e excluidos
-index_faller   = [7, 9, 10, 15, 24, 27, 34, 35, 40, 45, 58, 59, 63, 70, 77]
-index_faller3M = [9, 10, 35, 40, 59, 70, 77]
-index_faller6M = [7, 15, 27, 34, 46, 58, 59, 63]
-index_faller9M = [10, 24]
-index_excluded = [5, 16, 26, 48, 65, 66]
+index_faller   = [2, 7, 9, 10, 15, 27, 34, 35, 40, 46, 58, 59, 63, 70, 77] #15 caidores
+index_faller3M = [9, 10, 35, 40, 59, 70, 77] #7 caidores
+index_faller6M = [7, 15, 27, 34, 46, 58, 59, 63] #8 caidores, 1 recorrente
+index_faller9M = [2, 10] #2 caidores, 1 recorrente
+index_faller12M = [4, 20, 29] #ainda não estão no index_faller
+index_excluded = [5, 16, 26, 48, 65, 66] #6 excluídos
 
 # dicionario com indices e meses
 # podemos usar meses, e depois se precisar convertemos tudo para '1' (caidor)
-dict_label = {10:9, 24:9, 7:6, 15:6, 27:6, 34:6, 46:6, 58:6, 59:6, 63:6, 9:3, 10:3, 35:3, 40:3, 59:3, 70:3, 77:3}
+dict_label = {2:9, 10:9, 7:6, 15:6, 27:6, 34:6, 46:6, 58:6, 59:6, 63:6, 9:3, 10:3, 35:3, 40:3, 59:3, 70:3, 77:3}
 
 # dicionario com o numero de quedas
 dict_qtde  = {7:1, 9:1, 10:2, 15:1, 24:1, 27:1, 34:1, 35:1, 40:1, 45:1, 58:1, 59:2, 63:1, 70:1, 77:1}
@@ -730,9 +731,9 @@ def TUG_features(data, mask, TUGs,  filtering=True, savefile=True, filename="fea
         xm_count, new_xm = correct_mask(xm_count, xm)
         xl = label_TUG(xm_count, new_xm)
 
-        plt.plot(xd)
-        plt.plot(xl)
-        plt.show()
+        #plt.plot(xd)
+        #plt.plot(xl)
+        #plt.show()
         
         # creates a new signal from xd, containing only the 
         # segmented labels at xl, defined by TUGs
