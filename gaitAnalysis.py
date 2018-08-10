@@ -237,12 +237,13 @@ def data_features(data, filtering=True, debug=False, savefile=True, filename="fe
         pspf1 = pspf1+1
         pspf2 = pspf2+1
         pspf3 = pspf3+1
-        print("Features:")
-        print("PSE = " + str(pse))
-        print("PSP = " + str(psp1) + " " + str(psp2) + " " + str(psp3))
-        print("PSPF = " + str(pspf1) + " " + str(pspf2) + " " + str(pspf3))
-        print("WPSP = " + str(wpsp))
-        print("CPTs = " + str(cpt))
+        if (debug):
+            print("Features:")
+            print("PSE = " + str(pse))
+            print("PSP = " + str(psp1) + " " + str(psp2) + " " + str(psp3))
+            print("PSPF = " + str(pspf1) + " " + str(pspf2) + " " + str(pspf3))
+            print("WPSP = " + str(wpsp))
+            print("CPTs = " + str(cpt))
 
         if (debug):
             plt.plot(np.arange(1,maxfr), espPot[1:maxfr], color='k')
@@ -941,5 +942,101 @@ def correct_manualTUG(mask):
     mask[78][12111:13063] = 1
 
     return mask 
+
+
+def load_all_data():
+    ''' loads signals (after fusion) and computes frequency
+        features for the whole signals
+    '''
+
+    fusion = read_data_npy("data_fusion.npy")
+    feat = data_features(fusion, filtering=True, debug=False)
+    return fusion, feat
+
+
+def label_features(matrix, indPos=index_faller, indExc=index_excluded):
+    ''' labels the features matrix
+        Parameters:
+            matrix - features matrix, each row is an example
+            indPos - indices for the fallers (positive examples)
+                     default: index_faller (all fallers)
+            indExc - indices for the excluded examples
+                     default: index_excluded
+        Returns:
+            features matrix with label 1 for Positive,
+            -1 for Negative and 0 for Excluded
+    '''
+ 
+    labPos = 10 # index of the label in the feature vector
+    #rotula 
+    for i in indPos:
+        matrix[i][labPos] = 1   
+
+    for i in indExc:
+        matrix[i][labPos] = 0   
+
+    labels = []
+    feats = []
+    for v in matrix:
+        # skip the excluded ones
+        if not(v[labPos] == 0):
+            labels.append(v[labPos]) # get label
+            feats.append(v[1:labPos])# get feats
+
+    return feats, labels
+
+
+def cutoff_points(feature, labels, n_cutoff=10, verbose=False):
+
+    maxv = np.max(feature)
+    minv = np.min(feature)
+    opt_cut = 0
+    opt_acc = 0
+    opt_sen = 0
+    opt_spe = 0
+
+    # for each cuttof point 'c'
+    for c in np.linspace(minv, maxv, n_cutoff):
+        neg = np.where(feature < c)
+        pos = np.where(feature >= c)
+
+        # create the vector for the predicted labels
+        predict = np.ones(len(labels)).astype(int)
+        predict[neg] = -1
+
+        true_neg = np.where(labels == -1)
+        true_pos = np.where(labels == 1)
+
+        correct = np.where(labels==predict)
+
+        ACC = len(correct[0])/float(len(labels))
+
+        TP = len(np.where(predict[true_pos]==1)[0])
+        FP = len(np.where(predict[true_neg]==1)[0])
+        FN = len(np.where(predict[true_pos]==-1)[0])
+        TN = len(np.where(predict[true_neg]==-1)[0])
+
+        # TPR == sensitivity
+        TPR = TP/len(true_pos[0])
+
+        # TNR == specificity
+        TNR = TN/len(true_neg[0])
+
+        if (np.abs(TPR-TNR) < 0.05):
+            opt_cut = c
+            opt_acc = ACC
+            opt_sen  = TPR
+            opt_spe  = TNR
+
+        if (verbose):
+            if (c == opt_cut):
+                print("** Equal Error Rate **")
+            print("threshold %.2f, Accuracy=%.2f" % (c, ACC))
+            print("\tTP=%.2f, TN=%.2f, FP=%.2f, FN=%.2f" % (TP, TN, FP, FN))
+            print("\tSensitivity (TPR)=%.2f, Specificity (TNR)=%.2f\n" % (TPR, TNR))
+
+    print("Optimal threshold: %.3f, Acc=%.4f, Sens=%.4f, Spec=%.4f" % (opt_cut, opt_acc, opt_sen, opt_spe))
+
+    return opt_cut, opt_acc, opt_sen, opt_spe
 
 
