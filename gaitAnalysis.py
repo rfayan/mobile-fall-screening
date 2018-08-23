@@ -10,6 +10,7 @@ import heapq
 import pickle as pkl
 import pandas as pd
 import copy
+import collections
 
 from scipy import pi
 from scipy import stats
@@ -50,7 +51,14 @@ dict_qtde  = {7:1, 9:1, 10:2, 15:1, 24:1, 27:1, 34:1, 35:1, 40:1, 45:1, 58:1, 59
 
 def data_read_csv(directory, so="Windows", savefile=True, filename="data_accelerometer.pkl"):
 
-    '''Function to read csv files''' 
+    ''' function to read csv files
+        Parameters: 
+            directory - 
+    
+        Returns:
+            data - features matrix with all data (axes x, y and z)
+    
+    ''' 
 
     data = []
     for root, dirs, files in os.walk(directory):
@@ -98,12 +106,16 @@ def data_read_csv(directory, so="Windows", savefile=True, filename="data_acceler
 def read_data_pkl(filename="data_accelerometer.pkl"):
     return pd.read_pickle(filename)
 
+
+
 def strided_app(a, L, S ):  # Window len = L, Stride len/stepsize = S
 
     ''' Using numpy strides to apply function along arrays
         OBS: thanks to Divakar 
         https://stackoverflow.com/users/3293881/divakar
-        '''
+
+    '''
+
     nrows = ((a.size-L)//S)+1
     n = a.strides[0]
     return np.lib.stride_tricks.as_strided(a, shape=(nrows,L), strides=(S*n,n)) 
@@ -117,7 +129,14 @@ def median_filter(data, window_len=3, axis=1):
 
 def data_fusion(data, savefile=True, filename="data_fusion.npy"):
 
-    '''Function to generate the axes fusion'''
+    ''' function to generate the axes fusion
+        Parameters: 
+            matrix - data matrix
+
+        Returns:
+            dataf - data matrix with axes fusion
+
+    '''
 
     #get maximum number
     N = max(data[0])
@@ -155,7 +174,15 @@ def read_data_npy(filename="data_fusion.npy"):
 
 def data_features(data, filtering=True, debug=False, savefile=True, filename="featuresAcc.npy"):
 
-    '''Function to generate signal characteristics'''
+    ''' function to generate signal characteristics
+        Parameters: 
+            data - features matrix with axes fusion
+
+        Return:
+            featMatrix - matrix with all the features extracted from the signal
+            (pse, psp1, psp2, psp3, pspf1, pspf2, pspf3, wpsp, cpt)
+                      
+    '''
 
     featMatrix = []
     j = 1
@@ -286,9 +313,24 @@ def zscore_normalization(signal):
     return (signal-np.mean(signal))/np.std(signal)
 
 
+
+
 ## segmentation from data_fusion
 
 def data_segmentTS_TUG(tug, sumFilterSize=300, savefile=True, filename="segmentation.npy"):
+    
+    ''' function to segment the signal corresponded to each TUG
+        Parameters:
+            tug - matrix with axes fusion 
+            sumFilterSize - filter size
+
+        Returns:
+            mask - matrix with masks for each tug
+                1 - tug
+                0 - interval
+            segment - matrix with signal for each tug   
+
+    '''
 
     maskM = []
     segmT = []
@@ -301,7 +343,7 @@ def data_segmentTS_TUG(tug, sumFilterSize=300, savefile=True, filename="segmenta
 
         # normalizacao z-score
         matSegm = zscore_normalization(matSegm)
-
+    
         matSegm[ : int(sumFilterSize/2)] = 0
         matSegm[-int(sumFilterSize/2) : ] = 0
 
@@ -359,13 +401,16 @@ def read_segmentation_npy(filename="segmentation.npy"):
 
 def count_TUGs(mask):
 
-    ''' Counts the number of connected sequences of -1s inside
+    ''' counts the number of connected sequences of -1s inside
         the mask segmenting TUGs
+        Parameters:
+            mask - matrix with the masks
+
         Returns:
-            count: the number of TUGs detected by segmentation
-            TUGsizes: a vector of 'count' elements, each with the
+            count -  the number of TUGs detected by segmentation
+            TUGsizes - a vector of 'count' elements, each with the
                     number of observations for each segmented TUG
-            TUGpos: a vector of 'count' elements, each with the
+            TUGpos - a vector of 'count' elements, each with the
                     starting position of each segmented TUG
     '''
 
@@ -404,14 +449,14 @@ def count_TUGs(mask):
 
 def count_TUGs_all(mask):
     
-    ''' Counts the number of connected sequences of -1s inside
+    ''' counts the number of connected sequences of -1s inside
         the mask segmenting TUGs
+        Parameters:
+           mask  - matrix with the masks 
+        
         Returns:
-            count: the number of TUGs detected by segmentation
-            TUGsizes: a vector of 'count' elements, each with the
-                    number of observations for each segmented TUG
-            TUGpos: a vector of 'count' elements, each with the
-                    starting position of each segmented TUG
+            count - the number of TUGs detected by segmentation
+    
     '''
     newcount = []
 
@@ -429,6 +474,14 @@ def correct_mask(count, mask, debug=False):
     ''' checks the size of each TUG (observations)
         in order to split those above some max threshold (max_size)
         and merge those below some minimum threshold (min_size)
+        Parameters: 
+            count - the number of TUGs detected by segmentation 
+            mask  - matrix with the masks of each tug
+
+        Returns:
+            count - the number of TUGs detected by segmentation
+            mask  - matrix with the masks of each tug 
+
     '''
 
     countTUG = count[0]  # number of TUGs
@@ -472,11 +525,12 @@ def correct_mask(count, mask, debug=False):
 
 def label_TUG(newcount, newmask):
     
-    ''' Function to generate a labeled 'mascara', with 1, 2, 3, 4, 5, 6, 7, 8, 9
+    ''' function to generate a labeled 'mascara', with 1, 2, 3, 4, 5, 6, 7, 8, 9
     for the different TUGs
     Parameters:
-        newcount = TUG count corrected (must have 9 segmented TUGs) with: number of TUGs, sizes and positions
-        newmask  = TUG mask corrected (1 for TUG positions, 0 for non-TUG signal)
+        newcount - TUG count corrected (must have 9 segmented TUGs)
+            with: number of TUGs, sizes and positions
+        newmask  - TUG mask corrected (1 for TUG positions, 0 for non-TUG signal)
     '''
     
     # splits newcount data into TUG count, sizes and positions
@@ -490,43 +544,19 @@ def label_TUG(newcount, newmask):
         newmask[TUGpos[ID]:tug] = ID + 1
         ID = ID + 1
     
-    '''        
-    tug1 = TUGpos[0] + TUGsizes[0]
-    newmask[TUGpos[0]:tug1] = 1
-
-    tug2 = TUGpos[1] + TUGsizes[1]
-    newmask[TUGpos[1]:tug2] = 2
-
-    tug3 = TUGpos[2] + TUGsizes[2]
-    newmask[TUGpos[2]:tug3] = 3
-
-    tug4 = TUGpos[3] + TUGsizes[3] 
-    newmask[TUGpos[3]:tug4] = 4
-
-    tug5 = TUGpos[4] + TUGsizes[4] 
-    newmask[TUGpos[4]:tug5] = 5
-
-    tug6 = TUGpos[5] + TUGsizes[5]
-    newmask[TUGpos[5]:tug6] = 6
-
-    tug7 = TUGpos[6] + TUGsizes[6]
-    newmask[TUGpos[6]:tug7] = 7
-
-    tug8 = TUGpos[7] + TUGsizes[7] 
-    newmask[TUGpos[7]:tug8] = 8
-
-    tug9 = TUGpos[8] + TUGsizes[8]
-    newmask[TUGpos[8]:tug9] = 9
-
-    '''
-    
     return newmask
 
 
 ## pdfs from data (x,y,z) / data_fusion
 def generate_pdf_data(data, so = "all"):
 
-    '''Function to generate pdf from data (axes: x, y, z)'''
+    ''' function to generate pdf from data (axes: x, y, z)
+        Parameters:
+            data - data matrix
+            so   - all = generate pdf from all the accelerometry data
+                   ID  = generate pdf from each individual 
+
+    '''
 
     if so == "all":
         N = max(data[0])
@@ -570,7 +600,13 @@ def generate_pdf_data(data, so = "all"):
 
 def generate_pdf_fusion(fusion, so="all"):
 
-    '''Function to generate Pdf from data fusion'''
+    ''' function to generate Pdf from data fusion
+        Parameters:
+            fusion - data matrix with axes fusion
+            so     - all: generate pdf from all the accelerometry data
+                     ID: generate pdf from each individual 
+
+    '''
 
     if so == "all":
 
@@ -601,8 +637,20 @@ def generate_pdf_fusion(fusion, so="all"):
 
 def anovaGroups(matrix, featId, group1, group2, group3):
 
-    '''Function for the variables statistical analysis of the three 
-    initial groups using anova'''
+    ''' function for the variables statistical analysis of the three 
+    initial groups using anova
+        Parameters:
+            matrix - the matrix with rows representing subjects
+             first position is the ID, last position is the label
+            featId - the feature to be tested ( > 0 ) 
+            group1 - indices of 60-69 years old elderly
+            group2 - indices of 70-79 years old elderly
+            group3 - indices of 80 years old or more elderly
+
+        Returns:
+            anova - result of the anova test
+    
+    '''
 
     labPos = 9
 
@@ -646,17 +694,18 @@ def anovaGroups(matrix, featId, group1, group2, group3):
 
 def tTestFeatures(matrix, featId, indPos, indExc):
 
-    '''Function for the variables statistical analysis of the two 
+    ''' function for the variables statistical analysis of the two 
     groups formed from the two months of future fall observation 
     using test t
-
-    matrix - the matrix with rows representing subjects
+        Parameters:
+            matrix - the matrix with rows representing subjects
              first position is the ID, last position is the label
-    featId - the feature to be tested ( > 0 )
+            featId - the feature to be tested ( > 0 )
+            indPos - indices of fallers
+            indExc - indices of subject to be excluded
 
-    indPos - indices of fallers
-
-    indExc - indices of subject to be excluded
+        Returns:
+            tTest - result of the t test
 
     '''
 
@@ -692,7 +741,7 @@ def tTestFeatures(matrix, featId, indPos, indExc):
 
 
 def save_masks(masks, filename='tug_masks.npy'):
-    '''save masks 
+    ''' save masks 
         Parameters:
             filename - with .npy extension
             masks    - array with masks for the participants' TUGs
@@ -700,7 +749,7 @@ def save_masks(masks, filename='tug_masks.npy'):
     np.save(filename, masks)
 
 def load_masks(filename='tug_masks.npy'):
-    '''load masks from file
+    ''' load masks from file
         Parameters:
             filename - with .npy extension
     '''
@@ -716,8 +765,19 @@ def runExample():
     label = label_TUG(correct5[0], correct5[1])
 
 
-def TUG_features(data, mask, TUGs,  filtering=True, savefile=True, filename="featuresAcc-TUG.npy"):
-    ''' Extracts features from segmented TUGs  '''
+def TUG_features(data, mask, TUGs, filtering=True, savefile=True, filename="featuresAcc-TUG.npy"):
+    ''' extracts features from segmented TUGs 
+        Parameters:
+            data - matrix with the axes fusion
+            mask - matrix with the masks of each tug   
+            TUGs - number of the tug execution to extrated the features (1 to 9)
+
+        Returns:
+            featTUGs - features extrated from the acceleration signal 
+            corresponding to each tug
+    
+    
+    '''
 
     print("Extracting features from TUGs: "+str(TUGs))
 
@@ -750,199 +810,16 @@ def TUG_features(data, mask, TUGs,  filtering=True, savefile=True, filename="fea
 
     featTUGs = data_features(dataseg, filtering=filtering, savefile=savefile, filename=filename)
 
-    #if savefile:
-     #   np.save(featTUGs, dataseg)
+    #if savefile: 
+     #   np.save(featTUGs)
 
-    return featTUGs #dataseg 
+    return featTUGs  
 
 
 def read__TUGfeatures_npy(filename="featuresAcc-TUG.npy"):
     return np.load(filename)
 
-
-
-def correct_manualTUG(mask):
-
-    mask[0][8350:8528] = 1
-
-    mask[2][1954:2976] = 1
-    mask[2][6115:6364] = 1 #
-
-    mask[3][:369] = 0
-    mask[3][391:901] = 1
-    mask[3][2740:3638] = 1
-    mask[3][3707:5139] = 0
-
-    mask[4][2968:4007] = 1
-    mask[4][11794:12944] = 1
-
-    mask[6][7718:7808] = 1
-    mask[6][8978:9113] = 1
-
-    mask[7][2499:2948] = 0
-
-    mask[8][2513:2993] = 1
-
-    mask[10][8256:8689] = 1
-
-    mask[12][8514:8767] = 1
-    
-    mask[13][2727:3314] = 0
-    mask[13][3337:4362] = 1
-    mask[13][10366:10563] = 0
-    mask[13][10599:11696] = 1
-
-    mask[14][1564:2305] = 1
-    mask[14][3170:4198] = 1
-    mask[14][6810:6926] = 0
-    mask[14][7512:7736] = 1
-    mask[14][10739:11134] = 1
-
-    mask[15][6440:7803] = 1
-
-    mask[16][560:570] = 0
-    mask[16][842:1152] = 0
-    mask[16][1508:1526] = 0
-    mask[16][1927:2301] = 0
-    mask[16][2566:2848] = 0
-    mask[16][3040:3067] = 0
-    mask[16][3459:3541] = 0
-    mask[16][3815:3869] = 0
-
-    mask[17][2728:2910] = 1
-    mask[17][4241:4402] = 1
-    mask[17][5369:5583] = 1
-    mask[17][6485:6721] = 1
-    mask[17][9566:9749] = 1
-    
-    mask[22][7849:7967] = 1
-    mask[22][9771:9964] = 1
-
-    mask[24][130:750] = 1
-    mask[24][5129:6044] = 1
-    mask[24][8498:9169] = 1
-
-    mask[25][3714:3934] = 1
-    mask[25][6273:6472] = 1
-
-    mask[27][5157:6064] = 1
-
-    mask[28][3331:4069] = 1
-    mask[28][1666:2163] = 0
-
-    mask[30][11130:11360] = 1
-    mask[30][11384:11553] = 0
-
-    mask[32][1031:1344] = 1
-    mask[32][8279:8407] = 1
-
-    mask[33][2714:3663] = 1
-    mask[33][8113:8283] = 1
-
-    mask[35][3792:4913] = 1
-
-    mask[36][921:1122] = 1
-    mask[36][3532:3754] = 1
-    mask[36][6609:6757] = 1
-    mask[36][9622:9897] = 1
-
-    mask[38][2747:3245] = 0
-    mask[38][3290:4198] = 1
-
-    mask[40][1280:1557] = 1
-    mask[40][2432:2594] = 1
-    mask[40][3769:4080] = 1
-    mask[40][7122:7456] = 1
-    mask[40][9669:10671] = 1
-
-    mask[42][10202:10802] = 0
-
-    mask[44][730:1531] = 1
-    mask[44][2003:2717] = 1
-    mask[44][3947:5605] = 1
-    mask[44][8922:10366] = 1
-    mask[44][13210:13696] = 1
-
-    mask[49][987:1735] = 1
-    mask[49][2322:2858] = 1
-    mask[49][3981:4954] = 1
-    mask[49][10719:11630] = 1
-
-    mask[50][1791:2279] = 1
-    mask[50][2317:2825] = 0
-    mask[50][5314:5476] = 0
-    mask[50][5496:6367] = 1
-    mask[50][6874:7066] = 1
-    mask[50][8626:8808] = 1
-
-    mask[54][:1145] = 0
-    mask[54][1146:1806] = 1
-    mask[54][1809:2513] = 0
-    mask[54][2511:3105] = 1
-
-    mask[55][1357:1924] = 1
-    mask[55][2268:2936] = 1
-    mask[55][5807:5965] = 1
-
-    mask[56][5439:5765] = 0
-    mask[56][5767:6390] = 1
-    mask[56][10440:10578] = 0
-    mask[56][10579:11803] = 1
-
-    mask[58][4511:4850] = 1
-    mask[58][10553:10943] = 0
-
-    mask[59][:1417] = 0
-    mask[59][3470:4928] = 1
-    mask[59][8257:9492] = 1
-    mask[59][10921:11754] = 1
-    mask[59][11823:12045] = 0
-    mask[59][12073:13100] = 1
-
-    mask[61][2418:3072] = 1
-    mask[61][5610:6124] = 1
-
-    mask[62][7885:8287] = 1
-    mask[62][11248:11504] = 1
-
-    mask[64][5928:6062] = 1
-
-    mask[65][2103:2747] = 1
-    mask[65][5356:6318] = 1
-    mask[65][9402:9772] = 1
-
-    mask[69][1337:1813] = 1
-    mask[69][2621:2911] = 1
-    mask[69][5967:6288] = 1
-    mask[69][9509:9716] = 1
-
-    mask[70][3115:3550] = 1
-    mask[70][6220:6445] = 1
-
-    mask[71][2582:2809] = 1
-    mask[71][5845:6138] = 1
-    mask[71][8606:8852] = 1
-
-    mask[72][2456:3172] = 1
-    mask[72][5812:6296] = 1
-    mask[72][7970:8648] = 1
-
-    mask[74][3406:3615] = 1
-    mask[74][6195:6442] = 1
-    mask[74][8709:8842] = 1
-
-    mask[75][2778:2945] = 1
-    mask[75][6184:6596] = 1
-    mask[75][8834:9168] = 1
-    
-    mask[77][2664:3647] = 1
-
-    mask[78][8594:8925] = 1
-    mask[78][10718:11422] = 1
-    mask[78][12111:13063] = 1
-
-    return mask 
-
+   
 
 def load_all_data():
     ''' loads signals (after fusion) and computes frequency
@@ -955,6 +832,7 @@ def load_all_data():
 
 
 def label_features(matrix, indPos=index_faller, indExc=index_excluded):
+    
     ''' labels the features matrix
         Parameters:
             matrix - features matrix, each row is an example
@@ -983,10 +861,29 @@ def label_features(matrix, indPos=index_faller, indExc=index_excluded):
             labels.append(v[labPos]) # get label
             feats.append(v[1:labPos])# get feats
 
+    feats = np.asarray(feats)
+    labels = np.asarray(labels)
+
     return feats, labels
 
 
-def cutoff_points(feature, labels, n_cutoff=10, verbose=False):
+def cutoff_points(feature, labels, n_cutoff=100, verbose=True):
+
+    '''
+        Parameters:
+            features - feature matrix 
+            labels   - label matrix with 1 for positive (fallers) 
+             and -1 for negative (non-fallers)
+
+        Returns:
+           opt_predict - matrix with the predict condiction, 1 fallers 
+            or -1 non-fallers
+           opt_cut - cutoff point
+           opt_acc - accuracy
+           opt_sen - sensitivity
+           opt_spe - specificity
+
+    '''
 
     maxv = np.max(feature)
     minv = np.min(feature)
@@ -1003,7 +900,7 @@ def cutoff_points(feature, labels, n_cutoff=10, verbose=False):
         # create the vector for the predicted labels
         predict = np.ones(len(labels)).astype(int)
         predict[neg] = -1
-
+        
         true_neg = np.where(labels == -1)
         true_pos = np.where(labels == 1)
 
@@ -1018,25 +915,53 @@ def cutoff_points(feature, labels, n_cutoff=10, verbose=False):
 
         # TPR == sensitivity
         TPR = TP/len(true_pos[0])
-
         # TNR == specificity
         TNR = TN/len(true_neg[0])
 
         if (np.abs(TPR-TNR) < 0.05):
+            opt_predict = predict
             opt_cut = c
             opt_acc = ACC
             opt_sen  = TPR
             opt_spe  = TNR
 
+        else: 
+            opt_predict = predict
+    
         if (verbose):
             if (c == opt_cut):
-                print("** Equal Error Rate **")
+                print("*************** Equal Error Rate **************************")
+            print("predict" % (predict))
             print("threshold %.2f, Accuracy=%.2f" % (c, ACC))
             print("\tTP=%.2f, TN=%.2f, FP=%.2f, FN=%.2f" % (TP, TN, FP, FN))
             print("\tSensitivity (TPR)=%.2f, Specificity (TNR)=%.2f\n" % (TPR, TNR))
 
     print("Optimal threshold: %.3f, Acc=%.4f, Sens=%.4f, Spec=%.4f" % (opt_cut, opt_acc, opt_sen, opt_spe))
 
-    return opt_cut, opt_acc, opt_sen, opt_spe
+    return opt_predict
 
+
+
+def late_fusion(feat, label):
+
+    predict  = []
+    decision = []
+
+    for col in range(feat.shape[1]):
+        p = cutoff_points(feat[:,col],label) 
+        predict.append(p)
+    
+    predict = np.array(predict) 
+   
+    
+    for col in range(predict.shape[1]):
+        d = np.median(predict[:,col])
+        decision.append(d)
+    
+    decision = np.asarray(decision)
+    decision.astype(int)
+    
+    correct = np.where(label == decision)
+    
+    return predict, decision, correct
 
