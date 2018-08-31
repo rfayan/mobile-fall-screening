@@ -1,23 +1,14 @@
-import csv
 import numpy as np
 import matplotlib.pyplot as plt
 import os
 import regex as re
 import scipy
-import scipy.fftpack
-import pylab
-import heapq
-import pickle as pkl
 import pandas as pd
-import copy
-import collections
 
-from scipy import pi
 from scipy import stats
-from scipy.signal import butter, lfilter, freqz
+from scipy.signal import butter, lfilter
 from numpy import genfromtxt
 from matplotlib.backends.backend_pdf import PdfPages
-from itertools import product
 
 
 # Moacir
@@ -497,19 +488,18 @@ def correct_mask(count, mask, debug=False):
         # starts with the TUG with minimum size
         minT = np.argmin(TUGsizes) 
 
-        # get positions of minT and its neighbours
-        currT = TUGpos[minT]
-        prevT = TUGpos[minT-1] + TUGsizes[minT-1]
-        nextT = TUGpos[minT+1]
-
-        # test which side to merge with
-        # 0 - previous, 1 - next
-        diff = [currT-prevT, nextT-currT]
-        print(diff)
-        if np.argmin(diff) == 0:
-            mask[prevT-1:currT+1] = 1
+        if minT == 0:
+            mask[TUGpos[minT]:TUGpos[minT+1]] = 1
+        elif minT == len(TUGsizes)-1:
+            mask[TUGpos[minT-1]:TUGpos[minT]] = 1
         else:
-            mask[currT:nextT+1] = 1
+            # test which side to merge with
+            diff = [TUGpos[minT]-TUGpos[minT-1], TUGpos[minT+1]-TUGpos[minT]]
+            print(diff)
+            if diff[0] < diff[1]:
+                mask[TUGpos[minT-1]:TUGpos[minT]] = 1
+            else:
+                mask[TUGpos[minT]:TUGpos[minT+1]] = 1
 
         # recompute the counting
         count = count_TUGs(mask)
@@ -519,9 +509,9 @@ def correct_mask(count, mask, debug=False):
 
         if (debug):
             print("Min TUG: %d" % (minT))
-            print("Mask position: %d" % (currT))
-            print(TUGsizes)
-            print(TUGpos)
+            print("Mask position: %d" % (TUGpos[minT]))
+            print('TUGsizes: ' + str(TUGsizes))
+            print('TUGpos: ' + str(TUGpos))
             plt.plot(mask)
             plt.show()
 
