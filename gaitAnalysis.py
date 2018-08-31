@@ -924,8 +924,7 @@ def cutoff_points(feature, labels, n_cutoff=100, verbose=True):
             opt_acc = ACC
             opt_sen  = TPR
             opt_spe  = TNR
-
-        else: 
+        elif (c == minv): 
             opt_predict = predict
     
         if (verbose):
@@ -947,12 +946,13 @@ def late_fusion(feat, label):
     predict  = []
     decision = []
 
-    for col in range(feat.shape[1]):
-        p = cutoff_points(feat[:,col],label) 
+    #for col in range(feat.shape[1]):
+    for col in [0,2,3,5,6]:
+        p = cutoff_points(feat[:,col],label, verbose=False) 
         predict.append(p)
     
+    # optimal predictions for each feature
     predict = np.array(predict) 
-   
     
     for col in range(predict.shape[1]):
         d = np.median(predict[:,col])
@@ -962,6 +962,37 @@ def late_fusion(feat, label):
     decision.astype(int)
     
     correct = np.where(label == decision)
-    
+ 
+    true_neg = np.where(label == -1)
+    true_pos = np.where(label == 1)
+
+    ACC = len(correct[0])/float(len(label))
+    TP = len(np.where(decision[true_pos]==1)[0])
+    FP = len(np.where(decision[true_neg]==1)[0])
+    FN = len(np.where(decision[true_pos]==-1)[0])
+    TN = len(np.where(decision[true_neg]==-1)[0])
+
+    # TPR == sensitivity
+    TPR = TP/len(true_pos[0])
+    # TNR == specificity
+    TNR = TN/len(true_neg[0])
+
+    print("Late fusion:")
+    print("\tAccuracy=%.4f" % (ACC))
+    print("\tTP=%.4f, TN=%.4f, FP=%.4f, FN=%.4f" % (TP, TN, FP, FN))
+    print("\tSensitivity (TPR)=%.4f, Specificity (TNR)=%.4f\n" % (TPR, TNR))
+
     return predict, decision, correct
+
+
+
+def early_fusion(feat, label):
+
+    # for each feature
+    # 1) normalize so that the feature is in the range [0,1], create new vectors
+    # 2) after all features are normalized, then compute the average
+    # 3) the decision is made using the average
+    # 4) compute the evaluation metrics (accuracy, etc.)
+
+
 
