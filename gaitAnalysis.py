@@ -946,9 +946,9 @@ def late_fusion(feat, label):
     predict  = []
     decision = []
 
-    #for col in range(feat.shape[1]):
-    for col in [0,2,3,5,6]:
-        p = cutoff_points(feat[:,col],label, verbose=False) 
+    for col in range(feat.shape[1]):
+    #for col in [0,2,3,5,6]:
+        p = cutoff_points(feat[:,col],label, verbose=false) 
         predict.append(p)
     
     # optimal predictions for each feature
@@ -987,12 +987,33 @@ def late_fusion(feat, label):
 
 
 def early_fusion(feat, label):
+  
+    normalized_feat = []
+    average_feat = []
+    std_feat = []
+    decision = []
 
-    # for each feature
-    # 1) normalize so that the feature is in the range [0,1], create new vectors
-    # 2) after all features are normalized, then compute the average
-    # 3) the decision is made using the average
-    # 4) compute the evaluation metrics (accuracy, etc.)
+    for i in feat: 
+        n = (i-min(i))/(max(i)-min(i))
+        normalized_feat.append(n)
+
+    normalized_feat = np.asarray(normalized_feat)
+
+    
+    for i in normalized_feat:
+        m = np.mean(i)
+        dp = np.std(i)
+        average_feat.append(m)
+        std_feat.append(dp)
+    
+    average_feat = np.asarray(average_feat)
+    std_feat = np.asarray(std_feat)
+
+    d_average = cutoff_points(average_feat, label, verbose=False) 
+    d_std = cutoff_points(std_feat, label, verbose=False)
+    decision.append(d_average)
+    decision.append(d_std)
+    decision = np.asarray(decision)
 
 
-
+    return decision
