@@ -954,6 +954,7 @@ def late_fusion(feat, label):
     # optimal predictions for each feature
     predict = np.array(predict) 
     
+    # combine using majority voting (median)
     for col in range(predict.shape[1]):
         d = np.median(predict[:,col])
         decision.append(d)
@@ -985,7 +986,6 @@ def late_fusion(feat, label):
     return predict, decision, correct
 
 
-
 def early_fusion(feat, label):
   
     normalized_feat = []
@@ -993,21 +993,26 @@ def early_fusion(feat, label):
     std_feat = []
     decision = []
 
-    for i in feat: 
-        n = (i-min(i))/(max(i)-min(i))
+    # for each column (feature), normalize 0-1
+    nrows, nfeats = feat.shape
+    for i in range(nfeats):
+        f = feat[:,i]
+        n = (f-min(f))/(max(f)-min(f))
         normalized_feat.append(n)
 
     normalized_feat = np.asarray(normalized_feat)
 
-    
-    for i in normalized_feat:
-        m = np.mean(i)
-        dp = np.std(i)
+    # for each, compute mean/std of the normalized features
+    for i in range(nrows):
+        e = normalized_feat[:,i]
+        m = np.mean(e)
+        dp = np.std(e)
         average_feat.append(m)
         std_feat.append(dp)
     
-    average_feat = np.asarray(average_feat)
-    std_feat = np.asarray(std_feat)
+    # invert feature (check if needed)
+    average_feat = 1-np.asarray(average_feat)
+    std_feat = 1-np.asarray(std_feat)
 
     d_average = cutoff_points(average_feat, label, verbose=False) 
     d_std = cutoff_points(std_feat, label, verbose=False)
@@ -1015,5 +1020,6 @@ def early_fusion(feat, label):
     decision.append(d_std)
     decision = np.asarray(decision)
 
-
     return decision
+
+
