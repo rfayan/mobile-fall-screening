@@ -942,6 +942,7 @@ def cutoff_points(feature, labels, n_cutoff=100, verbose=True):
 
 
 def late_fusion(feat, label):
+    ''' Performs fusion on the decisions'''
 
     predict  = []
     decision = []
@@ -987,7 +988,8 @@ def late_fusion(feat, label):
 
 
 def early_fusion(feat, label):
-  
+    ''' Performs fusion on the features '''
+
     normalized_feat = []
     average_feat = []
     std_feat = []
