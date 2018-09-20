@@ -33,11 +33,11 @@ index_80 = [2, 12, 19, 29, 30, 44, 51, 59, 67, 73, 78]
 
 
 # listas de caidores e excluidos
-index_faller   = [2, 7, 9, 10, 15, 27, 34, 35, 40, 46, 58, 59, 63, 70, 77] #15 caidores
+index_faller   = [2, 4, 6, 7, 9, 10, 15, 20, 27, 29, 34, 35, 40, 46, 55, 58, 59, 63, 70, 77] #18 caidores
 index_faller3M = [9, 10, 35, 40, 59, 70, 77] #7 caidores
 index_faller6M = [7, 15, 27, 34, 46, 58, 59, 63] #8 caidores, 1 recorrente
 index_faller9M = [2, 10] #2 caidores, 1 recorrente
-index_faller12M = [4, 20, 29] #ainda não estão no index_faller
+index_faller12M = [4, 6, 20, 29, 55, 63] #6 caidores, #1 recorrente
 index_excluded = [5, 16, 26, 48, 65, 66] #6 excluídos
 
 # dicionario com indices e meses
@@ -635,7 +635,7 @@ def generate_pdf_fusion(fusion, so="all"):
 
 #analysis
 
-def anovaGroups(matrix, featId, group1, group2, group3):
+def statistic_Groups(matrix, featId, group1, group2, group3):
 
     ''' function for the variables statistical analysis of the three 
     initial groups using anova
@@ -649,7 +649,7 @@ def anovaGroups(matrix, featId, group1, group2, group3):
 
         Returns:
             anova - result of the anova test
-    
+            kruskal wallis - resul of the kruskal wallis test
     '''
 
     labPos = 9
@@ -658,28 +658,24 @@ def anovaGroups(matrix, featId, group1, group2, group3):
     m70 = []
     m80 = []
 
-    # copy matrix
-    tmatrix = np.zeros(matrix.shape)
-    tmatrix[:] = matrix
-
     #rotula na matriz
     for i in group1:
-        tmatrix[i][labPos] = 1
+        matrix[i][labPos] = 1
 
     for i in group2:    
-        tmatrix[i][labPos] = 2
+        matrix[i][labPos] = 2
 
     for i in group3:
-        tmatrix[i][labPos] = 3
+        matrix[i][labPos] = 3
 
     #percorre todas as linhas
-    for v in tmatrix:
+    for v in matrix:
         #monta as matrizes dos grupos
         if v[9] == 1:
             m60 = m60 + [v[featId]]
         elif v[9] == 2:
             m70 = m70 + [v[featId]]
-        else: 
+        elif v[9] == 3: 
             m80 = m80 + [v[featId]]
 
     print("Feature %d" % (featId))
@@ -687,9 +683,12 @@ def anovaGroups(matrix, featId, group1, group2, group3):
     print("\tMedias, grupo 70-79: %02.4f, desvio: %.4f" %(np.mean(m70), np.std(m70)))
     print("\tMedias, grupo 80+  : %02.4f, desvio: %.4f" %(np.mean(m80), np.std(m80)))
     anova = stats.f_oneway(m60, m70, m80)
+    kruskal_wallis = scipy.stats.kruskal(m60, m70, m80)
     print("\tp-value anova: %.4f " % (anova.pvalue))
+    print("\tp-value kruskal wallis: %.4f " % (kruskal_wallis.pvalue))
 
-    return anova
+    return anova, kruskal_wallis
+
 
 
 def tTestFeatures(matrix, featId, indPos, indExc):
@@ -947,9 +946,9 @@ def late_fusion(feat, label):
     predict  = []
     decision = []
 
-    for col in range(feat.shape[1]):
-    #for col in [0,2,3,5,6]:
-        p = cutoff_points(feat[:,col],label, verbose=false) 
+    #for col in range(feat.shape[1]):
+    for col in [0,2,3,5,6]:
+        p = cutoff_points(feat[:,col],label, verbose=False)
         predict.append(p)
     
     # optimal predictions for each feature
@@ -1013,8 +1012,8 @@ def early_fusion(feat, label):
         std_feat.append(dp)
     
     # invert feature (check if needed)
-    average_feat = 1-np.asarray(average_feat)
-    std_feat = 1-np.asarray(std_feat)
+    average_feat = np.asarray(average_feat)
+    std_feat = np.asarray(std_feat)
 
     d_average = cutoff_points(average_feat, label, verbose=False) 
     d_std = cutoff_points(std_feat, label, verbose=False)
@@ -1025,3 +1024,11 @@ def early_fusion(feat, label):
     return decision
 
 
+
+def load_data():
+    data = read_data_pkl()
+    fusion = read_data_npy()
+    mask= load_masks()
+    segm = read_segmentation_npy()
+
+    return data, fusion, mask, segm
