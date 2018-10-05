@@ -33,11 +33,11 @@ index_80 = [2, 12, 19, 29, 30, 44, 51, 59, 67, 73, 78]
 
 
 # listas de caidores e excluidos
-index_faller   = [2, 4, 6, 7, 9, 10, 15, 20, 27, 29, 34, 35, 40, 46, 55, 58, 59, 63, 70, 77] #18 caidores
+index_faller   = [2, 4, 6, 7, 9, 10, 15, 20, 27, 29, 34, 35, 40, 46, 55, 58, 59, 63, 70, 77] #20 caidores
 index_faller3M = [9, 10, 35, 40, 59, 70, 77] #7 caidores
 index_faller6M = [7, 15, 27, 34, 46, 58, 59, 63] #8 caidores, 1 recorrente
 index_faller9M = [2, 10] #2 caidores, 1 recorrente
-index_faller12M = [4, 6, 20, 29, 55, 63] #6 caidores, #1 recorrente
+index_faller12M = [4, 6, 20, 29, 55, 59, 63] #7 caidores, #2 recorrente
 index_excluded = [5, 16, 26, 48, 65, 66] #6 excluídos
 
 # dicionario com indices e meses
@@ -208,7 +208,7 @@ def data_features(data, filtering=True, debug=False, savefile=True, filename="fe
         freq = np.fft.fftfreq(n,timestep)
 
         espPotNyq = espPot[1:maxfr]
-
+       
         #1-power spectral entropy
         #computed over the Spectrum normalized between 0-1
         espProb = espPotNyq.copy()
@@ -218,7 +218,10 @@ def data_features(data, filtering=True, debug=False, savefile=True, filename="fe
         # the remaining features are computed over a
         # z-score normalization (i.e. x-mean/sd)
         espPotNyq = (espPotNyq-np.mean(espPotNyq)) / np.std(espPotNyq)
+        #plt.plot(espPotNyq, color='k')
+        #plt.show()
 
+       
         #2-power spectrum peak
         psp1 = np.max(espPotNyq)
 
@@ -264,6 +267,8 @@ def data_features(data, filtering=True, debug=False, savefile=True, filename="fe
         pspf1 = pspf1+1
         pspf2 = pspf2+1
         pspf3 = pspf3+1
+
+
         if (debug):
             print("Features:")
             print("PSE = " + str(pse))
@@ -691,7 +696,7 @@ def statistic_Groups(matrix, featId, group1, group2, group3):
 
 
 
-def tTestFeatures(matrix, featId, indPos, indExc):
+def statistic_Fall(matrix, featId, indPos, indExc):
 
     ''' function for the variables statistical analysis of the two 
     groups formed from the two months of future fall observation 
@@ -734,9 +739,12 @@ def tTestFeatures(matrix, featId, indPos, indExc):
 
 
     tTest = stats.ttest_ind(mPos, mNeg) 
+    mannWhitney = scipy.stats.mannwhitneyu(mPos, mNeg, use_continuity=True, alternative=None) 
     print("\tp-value t test: %.4f " % (tTest.pvalue))
+    print("\tp-value mannWhitney: %.4f " % (mannWhitney.pvalue))
+ 
 
-    return tTest
+    return tTest, mannWhitney
 
 
 def save_masks(masks, filename='tug_masks.npy'):
@@ -756,13 +764,6 @@ def load_masks(filename='tug_masks.npy'):
 
 
 ###################
-def runExample():
-    fusion = read_data_npy("data_fusion.npy") 
-    mask, segm = data_segmentTS_TUG(fusion)
-    count5 = count_TUGs(mask[5])
-    correct5 = correct_mask(count5, mask[5])
-    label = label_TUG(correct5[0], correct5[1])
-
 
 def TUG_features(data, mask, TUGs, filtering=True, savefile=True, filename="featuresAcc-TUG.npy"):
     ''' extracts features from segmented TUGs 
@@ -946,8 +947,8 @@ def late_fusion(feat, label):
     predict  = []
     decision = []
 
-    #for col in range(feat.shape[1]):
-    for col in [0,2,3,5,6]:
+    for col in range(feat.shape[1]):
+    #for col in [0,2,3,5,6]:
         p = cutoff_points(feat[:,col],label, verbose=False)
         predict.append(p)
     
@@ -1015,7 +1016,7 @@ def early_fusion(feat, label):
     average_feat = np.asarray(average_feat)
     std_feat = np.asarray(std_feat)
 
-    d_average = cutoff_points(average_feat, label, verbose=False) 
+    d_average = cutoff_points(average_feat, label, verbose=False)
     d_std = cutoff_points(std_feat, label, verbose=False)
     decision.append(d_average)
     decision.append(d_std)
