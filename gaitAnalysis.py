@@ -277,9 +277,8 @@ def data_features(data, filtering=True, debug=False, savefile=True, filename="fe
 
         features = [pse, psp1, psp2, psp3, pspf1, pspf2, pspf3, wpsp, cpt]
         id_vol = "%03d"%j
-        months = -1
         j = j + 1
-        featMatrix.append([id_vol] + features + [months])
+        featMatrix.append([id_vol] + features + 6*[0])
 
     if savefile:
         np.save(filename, featMatrix)

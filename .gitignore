@@ -37,3 +37,5 @@ vignettes/*.pdf
 *.npy
 *.pdf
 
+# Intellij IDE project metadata
+.idea/
